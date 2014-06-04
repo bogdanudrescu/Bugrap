@@ -93,7 +93,7 @@ public class ToggleButtonGroup extends ButtonGroup {
 	/*
 	 * The toggled style name.
 	 */
-	private final static String CSS_STYLE_TOGGLED = "v-pressed";//"toggled";
+	private final static String CSS_STYLE_TOGGLED = "toggled"; // "v-pressed";//
 
 	/**
 	 * Adds a button with the given caption to this button group. Group will be filled from left to right.

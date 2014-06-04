@@ -5,6 +5,7 @@ import java.io.Serializable;
 import com.example.bugrap.data.LoginManager;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.ObjectProperty;
+import com.vaadin.event.ShortcutAction.KeyCode;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.shared.ui.label.ContentMode;
@@ -42,6 +43,11 @@ public class LoginPage extends Panel implements View {
 	 */
 	private LoginDelegate loginDelegate;
 
+	/*
+	 * The username field.
+	 */
+	private TextField usernameField;
+
 	/**
 	 * Create the login page.
 	 * @param loginDelegate	manage what happen during and after login.
@@ -52,13 +58,14 @@ public class LoginPage extends Panel implements View {
 		username = new ObjectProperty<String>(DEFAULT_USERNAME);
 		password = new ObjectProperty<String>(DEFAULT_PASSWORD);
 
-		TextField usernameField = new TextField(username);
+		usernameField = new TextField(username);
 		usernameField.setCaption("Username");
 
 		PasswordField passwordField = new PasswordField(password);
 		passwordField.setCaption("Password");
 
 		Button loginButton = new Button("Login");
+		loginButton.setClickShortcut(KeyCode.ENTER);
 		loginButton.addClickListener(new LoginButtonListener());
 
 		VerticalLayout vLayout = new VerticalLayout();
@@ -115,6 +122,8 @@ public class LoginPage extends Panel implements View {
 	public void enter(ViewChangeEvent event) {
 		username.setValue(DEFAULT_USERNAME);
 		password.setValue(DEFAULT_PASSWORD);
+
+		usernameField.focus();
 	}
 
 	/*

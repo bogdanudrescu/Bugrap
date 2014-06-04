@@ -13,6 +13,7 @@ import com.vaadin.ui.UI;
  * Main UI class
  */
 @SuppressWarnings("serial")
+//@Theme("bugrap")
 public class BugrapUI extends UI {
 
 	/*

@@ -1,7 +1,7 @@
 package com.example.bugrap;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,7 +18,6 @@ import com.example.bugrap.data.LoginManager;
 import com.example.bugrap.utils.ToggleButtonGroup;
 import com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent;
 import com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener;
-import com.example.bugrap.utils.Utils;
 import com.vaadin.data.Container;
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
@@ -29,11 +28,8 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.OptionGroup;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.Table;
-import com.vaadin.ui.Table.ColumnGenerator;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 
@@ -56,9 +52,9 @@ public class ProjectView extends Panel {
 	private Container versionsDataSource = new BeanItemContainer<ProjectVersion>(ProjectVersion.class);
 
 	/*
-	 * The reports data source.
+	 * The reports table.
 	 */
-	private Container reportsDataSource = new BeanItemContainer<Report>(Report.class);
+	private ReportsTable reportsTable;
 
 	/**
 	 * Create the project view.
@@ -74,15 +70,18 @@ public class ProjectView extends Panel {
 		TextField searchField = new TextField(searchCriteria.freeText);
 
 		ComboBox versionField = new ComboBox("Reports for", versionsDataSource);
+		//		versionField.setNullSelectionAllowed(true);
+		//		versionField.setNullSelectionItemId("All versions");
 		versionField.setPropertyDataSource(searchCriteria.version);
 		versionField.addValueChangeListener(new VersionChangeListener());
 
 		// Button groups.
 		ToggleButtonGroup assigneesGroup = new ToggleButtonGroup("Only me", "Everyone");
-		assigneesGroup.addListener(new AssigneeToggleListener());
+		assigneesGroup.addListener(new AssigneeChangeListener());
 		assigneesGroup.setCaption("Assignees");
 
 		ToggleButtonGroup statusGroup = new ToggleButtonGroup("Open", "All kinds");
+		statusGroup.addListener(getStatusChangeListener());
 		statusGroup.setCaption("Status");
 
 		PopupButton statusCustom = new PopupButton("Custom");
@@ -114,163 +113,10 @@ public class ProjectView extends Panel {
 		layout.addComponent(row2Layout);
 
 		// Table with reports.
-		Table reportsTable = new Table();
-		reportsTable.setSizeFull();
-		reportsTable.setContainerDataSource(reportsDataSource);
-		reportsTable.setVisibleColumns("priority", "type", "summary", "assigned", "timestamp", "reportedTimestamp");
-
-		reportsTable.setColumnHeader("priority", "Priority");
-		reportsTable.setColumnHeader("type", "Type");
-		reportsTable.setColumnHeader("summary", "Summary");
-		reportsTable.setColumnHeader("assigned", "Assigned to");
-		reportsTable.setColumnHeader("timestamp", "Last modified");
-		reportsTable.setColumnHeader("reportedTimestamp", "Reported");
-
-		// Date cell custom renderer.
-		DateIntervalCell dateIntervalCell = new DateIntervalCell();
-		reportsTable.addGeneratedColumn("timestamp", dateIntervalCell);
-		reportsTable.addGeneratedColumn("reportedTimestamp", dateIntervalCell);
+		reportsTable = new ReportsTable();
 
 		layout.addComponent(reportsTable);
 		layout.setExpandRatio(reportsTable, 1);
-	}
-
-	/*
-	 * Generate the cell value for the date columns, showing how much time passed since the specified date.
-	 */
-	private class DateIntervalCell implements ColumnGenerator {
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Table.ColumnGenerator#generateCell(com.vaadin.ui.Table, java.lang.Object, java.lang.Object)
-		 */
-		@SuppressWarnings("unchecked")
-		@Override
-		public Object generateCell(Table source, Object itemId, Object columnId) {
-			Property<Date> property = source.getContainerProperty(itemId, columnId);
-
-			if (property != null && property.getType().equals(Date.class)) {
-				return new Label(Utils.stringIntervalFromDate(property.getValue()));
-			}
-
-			return null;
-		}
-
-	}
-
-	/*
-	 * Refresh the reports according to the search criteria.
-	 */
-	private void refreshReports() {
-		reportsDataSource.removeAllItems();
-
-		ReportsQuery query = searchCriteria.getQuery();
-
-		Set<Report> reports = DataManager.getBugrapRepository().findReports(query);
-		for (Report report : reports) {
-			reportsDataSource.addItem(report);
-		}
-
-		System.out.println("refreshReports for " + query + " output " + reports.size() + " results");
-	}
-
-	/*
-	 * Listen to the changes of the version field.
-	 */
-	private class VersionChangeListener implements ValueChangeListener {
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.data.Property.ValueChangeListener#valueChange(com.vaadin.data.Property.ValueChangeEvent)
-		 */
-		@Override
-		public void valueChange(ValueChangeEvent event) {
-			refreshReports();
-		}
-
-	}
-
-	/*
-	 * Search criteria.
-	 */
-	class SearchCriteria implements Serializable {
-
-		/*
-		 * The free text search field.
-		 */
-		private Property<String> freeText = new ObjectProperty<String>("", String.class);
-
-		/*
-		 * The type of assignee (me or everyone).
-		 */
-		private Property<Reporter> assignee = new ObjectProperty<Reporter>(null, Reporter.class);
-
-		/*
-		 * The status of the report.
-		 */
-		private Property<Integer> reportStatus = new ObjectProperty<Integer>(0, Integer.class);
-
-		/*
-		 * The version for which to display reports.
-		 */
-		private Property<ProjectVersion> version = new ObjectProperty<ProjectVersion>(null, ProjectVersion.class);
-
-		/*
-		 * The current selected project.
-		 */
-		private Project project;
-
-		/*
-		 * Sets the progect.
-		 */
-		void setProject(Project project) {
-			this.project = project;
-		}
-
-		/*
-		 * Gets the project.
-		 */
-		Project getProject() {
-			return project;
-		}
-
-		/*
-		 * Sets the assignee.
-		 */
-		void setAssignee(Reporter assignee) {
-			this.assignee.setValue(assignee);
-		}
-
-		/*
-		 * Gets the assignee.
-		 */
-		Reporter getAssignee() {
-			return assignee.getValue();
-		}
-
-		/*
-		 * The query to get the reports for.
-		 */
-		private ReportsQuery query = new ReportsQuery();
-
-		/**
-		 * Create the search criteria wrapper.
-		 */
-		public SearchCriteria() {
-			query.reportStatuses = new HashSet<Report.Status>();
-		}
-
-		/**
-		 * Gets the query to search the reports with.
-		 * @return	the query for reports.
-		 */
-		public ReportsQuery getQuery() {
-			query.project = getProject();
-			query.projectVersion = version.getValue();
-			query.reportAssignee = getAssignee();
-			query.reportStatuses.clear();
-
-			return query;
-		}
-
 	}
 
 	/**
@@ -303,9 +149,15 @@ public class ProjectView extends Panel {
 		}
 
 		// Select a version.
+		/*
 		if (projectVersionToSet != null) {
 			setProjectVersion(projectVersionToSet);
 		}
+		//*/
+
+		//*
+		setProjectVersion(null);
+		//*/
 	}
 
 	/**
@@ -321,7 +173,7 @@ public class ProjectView extends Panel {
 	 * @param projectVersion the projectVersion to set.
 	 */
 	public void setProjectVersion(ProjectVersion projectVersion) {
-		if (!searchCriteria.getProject().equals(projectVersion.getProject())) {
+		if (projectVersion != null && !searchCriteria.getProject().equals(projectVersion.getProject())) {
 			throw new IllegalArgumentException("The version do not belong to the selected project.");
 		}
 
@@ -335,11 +187,27 @@ public class ProjectView extends Panel {
 	private OptionGroup statusOptionGroup;
 
 	/*
+	 * The status change listener.
+	 */
+	private StatusChangeListener statusChangeListener;
+
+	/*
+	 * Creates the status change listener.
+	 */
+	private StatusChangeListener getStatusChangeListener() {
+		if (statusChangeListener == null) {
+			statusChangeListener = new StatusChangeListener();
+		}
+		return statusChangeListener;
+	}
+
+	/*
 	 * Create the status custom popup with all the options.
 	 */
 	private Component createStatusCustomPopup() {
 		statusOptionGroup = new OptionGroup();
 		statusOptionGroup.setMultiSelect(true);
+		statusOptionGroup.addValueChangeListener(getStatusChangeListener());
 
 		for (Status status : Status.values()) {
 			statusOptionGroup.addItem(status);
@@ -348,12 +216,45 @@ public class ProjectView extends Panel {
 		return statusOptionGroup;
 	}
 
-	/**
-	 * Handle the assignee selection.
+	/*
+	 * Update the UI from the search status criteria.
 	 * 
-	 * @author bogdan
+	 * Normally this should be a listener implementation, but we're in the same class and leak of time so no real reason to design this as it should.
 	 */
-	private class AssigneeToggleListener implements ToggleButtonGroupListener {
+	private void statusChanged() {
+		System.out.println("statusChanged: " + searchCriteria.getSelectedStatus());
+
+		statusOptionGroup.setValue(searchCriteria.getSelectedStatus());
+	}
+
+	/*
+	 * Refresh the reports.
+	 */
+	private void refreshReports() {
+		reportsTable.refreshReports(searchCriteria.getQuery());
+	}
+
+	/*
+	 * Listen to the changes of the version field.
+	 */
+	private class VersionChangeListener implements ValueChangeListener {
+
+		/* (non-Javadoc)
+		 * @see com.vaadin.data.Property.ValueChangeListener#valueChange(com.vaadin.data.Property.ValueChangeEvent)
+		 */
+		@Override
+		public void valueChange(ValueChangeEvent event) {
+			reportsTable.setVersionColumnVisible(event.getProperty().getValue() == null);
+
+			refreshReports();
+		}
+
+	}
+
+	/*
+	 * Handle the assignee selection.
+	 */
+	private class AssigneeChangeListener implements ToggleButtonGroupListener {
 
 		/* (non-Javadoc)
 		 * @see com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener#selectedButtonChanged(com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent)
@@ -372,6 +273,154 @@ public class ProjectView extends Panel {
 
 			refreshReports();
 		}
+
+	}
+
+	/*
+	 * Listen when the status changes for the search criteria.
+	 */
+	private class StatusChangeListener implements ToggleButtonGroupListener, ValueChangeListener {
+
+		/* (non-Javadoc)
+		 * @see com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener#selectedButtonChanged(com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent)
+		 */
+		@Override
+		public void selectedButtonChanged(ToggleButtonGroupEvent event) {
+			// Called from the ToggleButtonGroup with all customizable statuses
+
+			switch (event.getSelectedButtonIndex()) {
+				case 0:
+					searchCriteria.setStatusOpen();
+					refreshReports();
+					break;
+
+				case 1:
+					searchCriteria.setStatusAll();
+					refreshReports();
+					break;
+			}
+
+		}
+
+		/* (non-Javadoc)
+		 * @see com.vaadin.data.Property.ValueChangeListener#valueChange(com.vaadin.data.Property.ValueChangeEvent)
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public void valueChange(ValueChangeEvent event) {
+			// Called from the OptionGroup with all customizable statuses.
+			searchCriteria.setSelectedStatus((Collection<Status>) event.getProperty().getValue());
+		}
+	}
+
+	/*
+	 * Search criteria.
+	 * 
+	 * FIXME: I don't really like how this is implemented.
+	 */
+	private class SearchCriteria implements Serializable, ValueChangeListener {
+
+		/*
+		 * The free text search field.
+		 */
+		final Property<String> freeText = new ObjectProperty<String>("", String.class);
+
+		/*
+		 * The version for which to display reports.
+		 */
+		final ObjectProperty<ProjectVersion> version = new ObjectProperty<ProjectVersion>(null, ProjectVersion.class);
+
+		/*
+		 * The query to get the reports for.
+		 */
+		private final ReportsQuery query = new ReportsQuery();
+
+		/**
+		 * Create the search criteria wrapper.
+		 */
+		public SearchCriteria() {
+			query.reportStatuses = new HashSet<Report.Status>();
+
+			version.addValueChangeListener(this);
+		}
+
+		/* (non-Javadoc)
+		 * @see com.vaadin.data.Property.ValueChangeListener#valueChange(com.vaadin.data.Property.ValueChangeEvent)
+		 */
+		@Override
+		public void valueChange(ValueChangeEvent event) {
+			if (event.getProperty() == version) {
+				query.projectVersion = version.getValue();
+			}
+		}
+
+		/**
+		 * Gets the query to search the reports with.
+		 * @return	the query for reports.
+		 */
+		public ReportsQuery getQuery() {
+			query.projectVersion = version.getValue(); // Just to make sure.
+
+			return query;
+		}
+
+		/*
+		 * Sets the progect.
+		 */
+		void setProject(Project project) {
+			query.project = project;
+		}
+
+		/*
+		 * Gets the project.
+		 */
+		Project getProject() {
+			return query.project;
+		}
+
+		/*
+		 * Sets the assignee.
+		 */
+		void setAssignee(Reporter assignee) {
+			query.reportAssignee = assignee;
+		}
+
+		/*
+		 * Sets the status filter to Open status.
+		 */
+		void setStatusOpen() {
+			query.reportStatuses.clear();
+			query.reportStatuses.add(Status.OPEN);
+
+			statusChanged();
+		}
+
+		/*
+		 * Sets the status filter to all status.
+		 */
+		void setStatusAll() {
+			query.reportStatuses.clear();
+
+			statusChanged();
+		}
+
+		/*
+		 * Sets the selected statuses.
+		 */
+		void setSelectedStatus(Collection<Status> statuses) {
+			query.reportStatuses.clear();
+			query.reportStatuses.addAll(statuses);
+
+			statusChanged();
+		}
+
+		/*
+		 * Gets the selected status list.
+		 */
+		Collection<Status> getSelectedStatus() {
+			return query.reportStatuses;
+		}
+
 	}
 
 }
