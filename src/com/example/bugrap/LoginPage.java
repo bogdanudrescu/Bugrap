@@ -13,6 +13,7 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.PasswordField;
 import com.vaadin.ui.TextField;
@@ -101,6 +102,8 @@ public class LoginPage extends Panel implements View {
 
 			if (LoginManager.getManager().login(username.getValue(), password.getValue())) {
 				loginDelegate.showContent();
+			} else {
+				Notification.show("Login failed!");
 			}
 		}
 	}

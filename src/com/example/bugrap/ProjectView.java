@@ -12,7 +12,6 @@ import org.vaadin.bugrap.domain.entities.Report;
 import org.vaadin.bugrap.domain.entities.Report.Status;
 import org.vaadin.bugrap.domain.entities.Reporter;
 import org.vaadin.hene.popupbutton.PopupButton;
-import org.vaadin.peter.buttongroup.ButtonGroup;
 
 import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
@@ -79,24 +78,15 @@ public class ProjectView extends Panel {
 		versionField.addValueChangeListener(new VersionChangeListener());
 
 		// Button groups.
-		Button assigneeMe = new Button("Only me");
-		Button assigneeAll = new Button("Everyone");
-
-		ToggleButtonGroup assigneesGroup = new ToggleButtonGroup();
+		ToggleButtonGroup assigneesGroup = new ToggleButtonGroup("Only me", "Everyone");
 		assigneesGroup.addListener(new AssigneeToggleListener());
 		assigneesGroup.setCaption("Assignees");
-		assigneesGroup.addButton(assigneeMe);
-		assigneesGroup.addButton(assigneeAll);
 
-		Button statusOpen = new Button("Open");
-		Button statusAll = new Button("All kinds");
+		ToggleButtonGroup statusGroup = new ToggleButtonGroup("Open", "All kinds");
+		statusGroup.setCaption("Status");
+
 		PopupButton statusCustom = new PopupButton("Custom");
 		statusCustom.setContent(createStatusCustomPopup());
-
-		ButtonGroup statusGroup = new ButtonGroup();
-		statusGroup.setCaption("Status");
-		statusGroup.addButton(statusOpen);
-		statusGroup.addButton(statusAll);
 		statusGroup.addButton(statusCustom);
 
 		// Define the layouts.

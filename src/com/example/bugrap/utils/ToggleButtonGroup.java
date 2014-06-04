@@ -1,5 +1,6 @@
 package com.example.bugrap.utils;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class ToggleButtonGroup extends ButtonGroup {
 	/*
 	 * The click listener that will handle the toggle functionality.
 	 */
-	private ToggleClickListener toggleClickListener;
+	private ToggleClickListener toggleClickListener = new ToggleClickListener();
 
 	/*
 	 * The list of listeners to send the events to.
@@ -35,7 +36,26 @@ public class ToggleButtonGroup extends ButtonGroup {
 	 * Create a toggle buttons group.
 	 */
 	public ToggleButtonGroup() {
-		toggleClickListener = new ToggleClickListener();
+	}
+
+	/**
+	 * Creates a toggle buttons group with some default buttons.
+	 * @param buttonCaptions	the captions of the default buttons to add to the group.
+	 */
+	public ToggleButtonGroup(String... buttonCaptions) {
+		for (String buttonCaption : buttonCaptions) {
+			addButton(buttonCaption);
+		}
+	}
+
+	/**
+	 * Creates a toggle buttons group with some default buttons.
+	 * @param button	the default buttons to add to the group.
+	 */
+	public ToggleButtonGroup(Button... buttons) {
+		for (Button button : buttons) {
+			addButton(button);
+		}
 	}
 
 	/**
@@ -60,6 +80,10 @@ public class ToggleButtonGroup extends ButtonGroup {
 			return;
 		}
 
+		if (listeners == null) {
+			return;
+		}
+
 		ToggleButtonGroupEvent event = new ToggleButtonGroupEvent(this, selectedButtonIndex, previousButtonIndex);
 		for (ToggleButtonGroupListener listener : listeners) {
 			listener.selectedButtonChanged(event);
@@ -70,6 +94,15 @@ public class ToggleButtonGroup extends ButtonGroup {
 	 * The toggled style name.
 	 */
 	private final static String CSS_STYLE_TOGGLED = "v-pressed";//"toggled";
+
+	/**
+	 * Adds a button with the given caption to this button group. Group will be filled from left to right.
+	 * @param buttonCaption	the button caption.
+	 * @return	the button instance.
+	 */
+	public Button addButton(String buttonCaption) {
+		return addButton(new Button(buttonCaption));
+	}
 
 	/* (non-Javadoc)
 	 * @see org.vaadin.peter.buttongroup.ButtonGroup#addButton(com.vaadin.ui.Button)
@@ -127,7 +160,7 @@ public class ToggleButtonGroup extends ButtonGroup {
 			i++;
 		}
 
-		toggleDone(toggleDone, previousButtonIndex, selectedButtonIndex);
+		toggleDone(toggleDone, selectedButtonIndex, previousButtonIndex);
 
 		return toggleDone;
 	}
@@ -160,7 +193,7 @@ public class ToggleButtonGroup extends ButtonGroup {
 			i++;
 		}
 
-		toggleDone(toggleDone, previousButtonIndex, selectedButtonIndex);
+		toggleDone(toggleDone, selectedButtonIndex, previousButtonIndex);
 
 		return toggleDone;
 	}
@@ -170,7 +203,11 @@ public class ToggleButtonGroup extends ButtonGroup {
 	 */
 	private void toggleDone(boolean toggleDone, int selectedButtonIndex, int previousButtonIndex) {
 
+		System.out.println("toggleDone " + toggleDone + ", " + selectedButtonIndex + ", " + previousButtonIndex);
+
 		currentSelectedButtonIndex = selectedButtonIndex;
+
+		System.out.println("currentSelectedButtonIndex: " + currentSelectedButtonIndex);
 
 		if (toggleDone) {
 			notifyListener(selectedButtonIndex, previousButtonIndex);
@@ -195,6 +232,8 @@ public class ToggleButtonGroup extends ButtonGroup {
 		 */
 		@Override
 		public void buttonClick(ClickEvent event) {
+			System.out.println("buttonClick currentSelectedButtonIndex: " + currentSelectedButtonIndex);
+
 			toggleButton(event.getButton());
 		}
 
@@ -203,7 +242,7 @@ public class ToggleButtonGroup extends ButtonGroup {
 	/**
 	 * Implement this to listen to the toggle button changes inside the ToggleButtonGroup.
 	 */
-	public static interface ToggleButtonGroupListener {
+	public static interface ToggleButtonGroupListener extends Serializable {
 
 		/**
 		 * Called when the ToggleButtonGroup selection changes.
