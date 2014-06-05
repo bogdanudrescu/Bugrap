@@ -1,5 +1,6 @@
-package com.example.bugrap;
+package com.example.bugrap.report;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Observable;
 
@@ -21,8 +22,12 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.ComboBox;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.TextArea;
+import com.vaadin.ui.VerticalLayout;
 
 /**
  * The edit page for a report.
@@ -48,12 +53,118 @@ public class ReportEditor extends Panel {
 	 */
 	private ComboBox versionComboBox;
 
+	/*
+	 * The title label. I couldn't bind it to the model...
+	 */
+	private Label titleLabel;
+
+	/*
+	 * The breadcrumbs label.
+	 */
+	private Label breadcrumbsLabel;
+
 	/**
 	 * Create a new report editor.
 	 */
 	public ReportEditor() {
 
 		binder.setBuffered(true); // make sure it's buffered (by default seems to be true anyway).
+
+		VerticalLayout layout = new VerticalLayout();
+		layout.setSizeFull();
+
+		breadcrumbsArea = createBreadcrumbsArea();
+		layout.addComponent(breadcrumbsArea);
+
+		layout.addComponent(createTitleArea());
+		layout.addComponent(createPropertiesArea());
+
+		Component descriptionArea = createDescriptionArea();
+		layout.addComponent(descriptionArea);
+		layout.setExpandRatio(descriptionArea, 0.5f); // FIXME This doesn't work when resize.
+
+		Component commentArea = createCommentArea();
+		layout.addComponent(commentArea);
+		layout.setExpandRatio(commentArea, 0.5f);
+
+		setContent(layout);
+	}
+
+	/*
+	 * The breadcrumbs area.
+	 */
+	private Component breadcrumbsArea;
+
+	/**
+	 * Sets the visible state of the breadcrumbs.
+	 * @param breadcrumbsVisible	the new visible state of the breadcrumbs.
+	 */
+	public void setBreadcrumbsVisible(boolean breadcrumbsVisible) {
+		breadcrumbsArea.setVisible(breadcrumbsVisible);
+	}
+
+	/*
+	 * Create the a non navigation path. 
+	 */
+	private Component createBreadcrumbsArea() {
+		HorizontalLayout layout = new HorizontalLayout();
+		layout.setSizeFull();
+
+		breadcrumbsLabel = new Label();
+
+		layout.addComponent(breadcrumbsLabel);
+
+		return layout;
+	}
+
+	/*
+	 * Create the comment area.
+	 */
+	private Component createCommentArea() {
+
+		Panel panel = new Panel();
+		panel.setSizeFull();
+
+		return panel;
+	}
+
+	/*
+	 * Create the description area.
+	 */
+	private Component createDescriptionArea() {
+		TextArea descriptionArea = new TextArea();
+		descriptionArea.setSizeFull();
+		binder.bind(descriptionArea, "description");
+
+		return descriptionArea;
+	}
+
+	/*
+	 * Create the title area.
+	 */
+	private Component createTitleArea() {
+		HorizontalLayout layout = new HorizontalLayout();
+		layout.setSizeFull();
+
+		Button button = new Button("Open in new window");
+
+		titleLabel = new Label();
+		titleLabel.setSizeFull();
+
+		layout.addComponent(button);
+		layout.addComponent(titleLabel);
+
+		layout.setExpandRatio(titleLabel, 1);
+
+		return layout;
+	}
+
+	/*
+	 * Create the top bar.
+	 */
+	private Component createPropertiesArea() {
+		HorizontalLayout layout = new HorizontalLayout();
+		layout.setSizeFull();
 
 		ComboBox priorityComboBox = new ComboBox("Priority");
 		priorityComboBox.setContainerDataSource(Utils.createValueListContainerFromEnum(Priority.class, Priority.values()));
@@ -80,9 +191,6 @@ public class ReportEditor extends Panel {
 		Button revertButton = new Button("Revert");
 		revertButton.addClickListener(new RevertButtonListener());
 
-		HorizontalLayout layout = new HorizontalLayout();
-		setContent(layout);
-
 		layout.addComponent(priorityComboBox);
 		layout.addComponent(typeComboBox);
 		layout.addComponent(statusComboBox);
@@ -90,6 +198,7 @@ public class ReportEditor extends Panel {
 		layout.addComponent(versionComboBox);
 		layout.addComponent(updateButton);
 		layout.addComponent(revertButton);
+		return layout;
 	}
 
 	/**
@@ -101,8 +210,28 @@ public class ReportEditor extends Panel {
 		versionComboBox.setContainerDataSource(new BeanItemContainer<ProjectVersion>(ProjectVersion.class, DataManager.getBugrapRepository()
 				.findProjectVersions(report.getProject())));
 
+		// Sets the title.
+		titleLabel.setCaption(report.getSummary());
+
+		// Sets the breadcrumbs title.
+		updateBreadcrumbs(report);
+
 		//this.report = report;
 		binder.setItemDataSource(new BeanItem<Report>(report));
+
+	}
+
+	/*
+	 * Update the breadcrumbs label from the specified report.
+	 * 
+	 * Maybe we should keep the report as a member, rather then passing it as an argument to this method.
+	 */
+	private void updateBreadcrumbs(Report report) {
+		String breadcrumbs = report.getProject().getName();
+		if (report.getVersion() != null) {
+			breadcrumbs += " > " + report.getVersion().getVersion();
+		}
+		breadcrumbsLabel.setCaption(breadcrumbs);
 	}
 
 	/**
@@ -132,7 +261,13 @@ public class ReportEditor extends Panel {
 				binder.commit();
 
 				BeanItem<Report> item = (BeanItem<Report>) binder.getItemDataSource();
-				commitObservable.notifyObservers(item.getBean()); // Maybe we should only notify and pass no object.
+				Report report = item.getBean();
+
+				commitObservable.notifyObservers(report); // Maybe we should only notify and pass no object.
+
+				// Or maybe call setReport... after the notify...
+				updateBreadcrumbs(report);
+
 			} catch (CommitException e) {
 				e.printStackTrace();
 			}
@@ -158,7 +293,12 @@ public class ReportEditor extends Panel {
 	/*
 	 * Used to notify when the commit is done.
 	 */
-	private Observable commitObservable = new Observable() {
+	private Observable commitObservable = new CommitObservable();
+
+	/*
+	 * Used to notify when the commit is done.
+	 */
+	private class CommitObservable extends Observable implements Serializable {
 
 		/* (non-Javadoc)
 		 * @see java.util.Observable#notifyObservers(java.lang.Object)
@@ -167,7 +307,7 @@ public class ReportEditor extends Panel {
 			super.setChanged();
 			super.notifyObservers(arg);
 		};
-	};
+	}
 
 	/**
 	 * Gets the commit observable used to notify when the commit is done.

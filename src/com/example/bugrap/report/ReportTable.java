@@ -1,4 +1,4 @@
-package com.example.bugrap;
+package com.example.bugrap.report;
 
 import java.util.Date;
 import java.util.Set;

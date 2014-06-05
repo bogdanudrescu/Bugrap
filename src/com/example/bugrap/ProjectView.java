@@ -17,6 +17,8 @@ import org.vaadin.hene.popupbutton.PopupButton;
 
 import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
+import com.example.bugrap.report.ReportEditor;
+import com.example.bugrap.report.ReportTable;
 import com.example.utils.ToggleButtonGroup;
 import com.example.utils.ToggleButtonGroup.ToggleButtonGroupEvent;
 import com.example.utils.ToggleButtonGroup.ToggleButtonGroupListener;
@@ -125,6 +127,7 @@ public class ProjectView extends Panel {
 		reportTable.addValueChangeListener(new ReportTableSelectionListener());
 		reportEditor = new ReportEditor();
 		reportEditor.getCommitObservable().addObserver(new ReportEditorCommitObserver());
+		reportEditor.setBreadcrumbsVisible(false);
 
 		VerticalSplitPanel splitPanel = new VerticalSplitPanel(reportTable, reportEditor);
 
