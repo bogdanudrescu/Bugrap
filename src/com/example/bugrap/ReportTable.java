@@ -7,7 +7,7 @@ import org.vaadin.bugrap.domain.BugrapRepository.ReportsQuery;
 import org.vaadin.bugrap.domain.entities.Report;
 
 import com.example.bugrap.data.DataManager;
-import com.example.bugrap.utils.Utils;
+import com.example.utils.Utils;
 import com.vaadin.data.Container;
 import com.vaadin.data.Property;
 import com.vaadin.data.util.BeanItemContainer;
@@ -20,7 +20,7 @@ import com.vaadin.ui.Table;
  * @author bogdanudrescu
  */
 @SuppressWarnings("serial")
-public class ReportsTable extends Table {
+public class ReportTable extends Table {
 
 	/*
 	 * The reports data source.
@@ -30,7 +30,7 @@ public class ReportsTable extends Table {
 	/**
 	 * Create the reports table.
 	 */
-	public ReportsTable() {
+	public ReportTable() {
 		setSizeFull();
 		setSelectable(true);
 		setMultiSelect(true);

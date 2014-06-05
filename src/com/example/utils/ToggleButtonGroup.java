@@ -1,4 +1,4 @@
-package com.example.bugrap.utils;
+package com.example.utils;
 
 import java.io.Serializable;
 import java.util.Iterator;

@@ -1,7 +1,10 @@
-package com.example.bugrap.utils;
+package com.example.utils;
 
 import java.util.Calendar;
 import java.util.Date;
+
+import com.vaadin.data.Container;
+import com.vaadin.data.util.BeanItemContainer;
 
 /**
  * Utility methods.
@@ -9,6 +12,20 @@ import java.util.Date;
  * @author bogdan
  */
 public class Utils {
+
+	/**
+	 * Data container with the types.
+	 * @param enumClass	the enumeration class.
+	 * @param values	the enumeration values.
+	 * @return	a Container filled with all the values of the enumeration as items.
+	 */
+	public static <ENUM_TYPE> Container createValueListContainerFromEnum(Class<ENUM_TYPE> enumClass, ENUM_TYPE[] values) {
+		Container container = new BeanItemContainer<ENUM_TYPE>(enumClass);
+		for (ENUM_TYPE value : values) {
+			container.addItem(value);
+		}
+		return container;
+	}
 
 	/*
 	 * The calendar fields and their types. 
@@ -38,7 +55,7 @@ public class Utils {
 			}
 		}
 
-		return "";
+		return "just now";
 
 		//*/
 

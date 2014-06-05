@@ -3,6 +3,8 @@ package com.example.bugrap;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 
 import org.vaadin.bugrap.domain.BugrapRepository.ReportsQuery;
@@ -15,9 +17,9 @@ import org.vaadin.hene.popupbutton.PopupButton;
 
 import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
-import com.example.bugrap.utils.ToggleButtonGroup;
-import com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent;
-import com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener;
+import com.example.utils.ToggleButtonGroup;
+import com.example.utils.ToggleButtonGroup.ToggleButtonGroupEvent;
+import com.example.utils.ToggleButtonGroup.ToggleButtonGroupListener;
 import com.vaadin.data.Container;
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
@@ -32,6 +34,7 @@ import com.vaadin.ui.OptionGroup;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.VerticalSplitPanel;
 
 /**
  * View a single project details, including versions, reports, add new stuff to the project, etc.
@@ -52,9 +55,14 @@ public class ProjectView extends Panel {
 	private Container versionsDataSource = new BeanItemContainer<ProjectVersion>(ProjectVersion.class);
 
 	/*
-	 * The reports table.
+	 * The table containing reports.
 	 */
-	private ReportsTable reportsTable;
+	private ReportTable reportTable;
+
+	/*
+	 * The report editor.
+	 */
+	private ReportEditor reportEditor;
 
 	/**
 	 * Create the project view.
@@ -112,11 +120,16 @@ public class ProjectView extends Panel {
 		row2Layout.addComponent(statusGroup);
 		layout.addComponent(row2Layout);
 
-		// Table with reports.
-		reportsTable = new ReportsTable();
+		// Table with reports and editor.
+		reportTable = new ReportTable();
+		reportTable.addValueChangeListener(new ReportTableSelectionListener());
+		reportEditor = new ReportEditor();
+		reportEditor.getCommitObservable().addObserver(new ReportEditorCommitObserver());
 
-		layout.addComponent(reportsTable);
-		layout.setExpandRatio(reportsTable, 1);
+		VerticalSplitPanel splitPanel = new VerticalSplitPanel(reportTable, reportEditor);
+
+		layout.addComponent(splitPanel);
+		layout.setExpandRatio(splitPanel, 1);
 	}
 
 	/**
@@ -231,7 +244,7 @@ public class ProjectView extends Panel {
 	 * Refresh the reports.
 	 */
 	private void refreshReports() {
-		reportsTable.refreshReports(searchCriteria.getQuery());
+		reportTable.refreshReports(searchCriteria.getQuery());
 	}
 
 	/*
@@ -244,7 +257,7 @@ public class ProjectView extends Panel {
 		 */
 		@Override
 		public void valueChange(ValueChangeEvent event) {
-			reportsTable.setVersionColumnVisible(event.getProperty().getValue() == null);
+			reportTable.setVersionColumnVisible(event.getProperty().getValue() == null);
 
 			refreshReports();
 		}
@@ -310,13 +323,14 @@ public class ProjectView extends Panel {
 		public void valueChange(ValueChangeEvent event) {
 			// Called from the OptionGroup with all customizable statuses.
 			searchCriteria.setSelectedStatus((Collection<Status>) event.getProperty().getValue());
+			refreshReports();
 		}
 	}
 
 	/*
 	 * Search criteria.
 	 * 
-	 * FIXME: I don't really like how this is implemented.
+	 * FIXME: I don't really like how this is implemented. It mixes Property biding with setters.
 	 */
 	private class SearchCriteria implements Serializable, ValueChangeListener {
 
@@ -359,7 +373,8 @@ public class ProjectView extends Panel {
 		 * @return	the query for reports.
 		 */
 		public ReportsQuery getQuery() {
-			query.projectVersion = version.getValue(); // Just to make sure.
+			// It seems the ValueChangeListeners are called in the right order so we may skip this line.
+			//query.projectVersion = version.getValue(); // Just to make sure.
 
 			return query;
 		}
@@ -419,6 +434,54 @@ public class ProjectView extends Panel {
 		 */
 		Collection<Status> getSelectedStatus() {
 			return query.reportStatuses;
+		}
+
+	}
+
+	/*
+	 * Selection listener for the report table rows.
+	 */
+	private class ReportTableSelectionListener implements ValueChangeListener {
+
+		/* (non-Javadoc)
+		 * @see com.vaadin.data.Property.ValueChangeListener#valueChange(com.vaadin.data.Property.ValueChangeEvent)
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public void valueChange(ValueChangeEvent event) {
+			Collection<Report> reports = (Collection<Report>) event.getProperty().getValue();
+
+			System.out.println("event.getProperty(): " + event.getProperty().getClass().getName());
+			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue().getClass().getName());
+			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue());
+			System.out.println("reportTable.getValue(): " + reportTable.getValue().getClass().getName());
+			System.out.println("reportTable.getValue(): " + reportTable.getValue());
+
+			reportEditor.setReport(reports.iterator().next()); // TODO: call setReports.
+		}
+	}
+
+	/*
+	 * Listen to commits from the editor.
+	 */
+	private class ReportEditorCommitObserver implements Observer, Serializable {
+
+		/* (non-Javadoc)
+		 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+		 */
+		@Override
+		public void update(Observable o, Object arg) {
+			System.out.println("arg: " + arg);
+			System.out.println("arg: " + arg.getClass().getName());
+
+			Report report = (Report) arg;
+
+			reportTable.refreshRowCache(); // FIXME: This sucks, it should be automatically, or at least to refresh only that row.
+
+			synchronized (this) { // Maybe this synch is to much.
+				DataManager.getBugrapRepository().save(report);
+				report.updateConsistencyVersion();
+			}
 		}
 
 	}
