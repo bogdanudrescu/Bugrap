@@ -1,22 +1,30 @@
 package com.example.bugrap;
 
+import javax.servlet.annotation.WebServlet;
+
 import org.vaadin.bugrap.domain.BugrapRepository;
 
 import com.example.bugrap.LoginPage.LoginDelegate;
 import com.example.bugrap.data.DataManager;
 import com.vaadin.annotations.Theme;
+import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServlet;
 import com.vaadin.ui.UI;
 
 /**
  * Main UI class
  */
 @SuppressWarnings("serial")
-//@Theme("bugrap")
-@Theme("runo")
+@Theme("bugrap")
 public class BugrapUI extends UI {
+
+	@WebServlet(value = "/*", asyncSupported = true)
+	@VaadinServletConfiguration(productionMode = false, ui = BugrapUI.class, widgetset = "com.example.bugrap.widgetset.BugrapWidgetset")
+	public static class Servlet extends VaadinServlet {
+	}
 
 	/*
 	 * The data repository.
