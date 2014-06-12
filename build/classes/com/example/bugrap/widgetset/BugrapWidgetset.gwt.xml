@@ -42,4 +42,7 @@
     <inherits name="org.vaadin.hene.popupbutton.widgetset.PopupbuttonWidgetset" />
 
     <inherits name="org.vaadin.peter.buttongroup.ButtonGroupWidgetset" />
+    
+
+    <inherits name="org.vaadin.addons.buttongroup.ButtonGroupLayoutWidgetset" />
 </module>

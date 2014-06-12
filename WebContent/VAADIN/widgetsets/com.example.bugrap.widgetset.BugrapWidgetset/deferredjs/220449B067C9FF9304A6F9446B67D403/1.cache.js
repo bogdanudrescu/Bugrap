@@ -1,1 +1,0 @@
-$wnd.com_example_bugrap_widgetset_BugrapWidgetset.runAsyncCallback1('x8(1774,1,epd);_.nc=function F$b(){LPb((!GPb&&(GPb=new MPb),GPb),this.b.e)};gdd(Vh)(1);\n//# sourceURL=com.example.bugrap.widgetset.BugrapWidgetset-1.js\n')

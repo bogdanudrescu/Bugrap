@@ -40,6 +40,8 @@
 
 		<!-- PopupButton -->
 		<dependency org="org.vaadin.addons" name="popupbutton" rev="2.3.0" />
+		
+		<dependency org="org.eclipse.persistence" name="javax.persistence" rev="2.1.0" conf="default->default"  />
 
 	</dependencies>
 </ivy-module>

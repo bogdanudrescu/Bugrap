@@ -7,6 +7,9 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
+import org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionEvent;
+import org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionListener;
+import org.vaadin.addons.buttongroup.HorizontalButtonGroupLayout;
 import org.vaadin.bugrap.domain.BugrapRepository.ReportsQuery;
 import org.vaadin.bugrap.domain.entities.Project;
 import org.vaadin.bugrap.domain.entities.ProjectVersion;
@@ -19,9 +22,6 @@ import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
 import com.example.bugrap.report.ReportEditor;
 import com.example.bugrap.report.ReportTable;
-import com.example.utils.ToggleButtonGroup;
-import com.example.utils.ToggleButtonGroup.ToggleButtonGroupEvent;
-import com.example.utils.ToggleButtonGroup.ToggleButtonGroupListener;
 import com.vaadin.data.Container;
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
@@ -86,17 +86,17 @@ public class ProjectView extends Panel {
 		versionField.addValueChangeListener(new VersionChangeListener());
 
 		// Button groups.
-		ToggleButtonGroup assigneesGroup = new ToggleButtonGroup("Only me", "Everyone");
-		assigneesGroup.addListener(new AssigneeChangeListener());
+		HorizontalButtonGroupLayout assigneesGroup = new HorizontalButtonGroupLayout("Only me", "Everyone");
 		assigneesGroup.setCaption("Assignees");
+		assigneesGroup.getButtonGroup().addSelectionListener(new AssigneeChangeListener());
 
-		ToggleButtonGroup statusGroup = new ToggleButtonGroup("Open", "All kinds");
-		statusGroup.addListener(getStatusChangeListener());
+		HorizontalButtonGroupLayout statusGroup = new HorizontalButtonGroupLayout("Open", "All kinds");
 		statusGroup.setCaption("Status");
+		statusGroup.getButtonGroup().addSelectionListener(getStatusChangeListener());
 
 		PopupButton statusCustom = new PopupButton("Custom");
 		statusCustom.setContent(createStatusCustomPopup());
-		statusGroup.addButton(statusCustom);
+		statusGroup.getButtonGroup().addButton(statusCustom);
 
 		// Define the layouts.
 		VerticalLayout layout = new VerticalLayout();
@@ -270,13 +270,13 @@ public class ProjectView extends Panel {
 	/*
 	 * Handle the assignee selection.
 	 */
-	private class AssigneeChangeListener implements ToggleButtonGroupListener {
+	private class AssigneeChangeListener implements ButtonGroupSelectionListener {
 
 		/* (non-Javadoc)
-		 * @see com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener#selectedButtonChanged(com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent)
+		 * @see org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionListener#selectedButtonChanged(org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionEvent)
 		 */
 		@Override
-		public void selectedButtonChanged(ToggleButtonGroupEvent event) {
+		public void selectedButtonChanged(ButtonGroupSelectionEvent event) {
 			switch (event.getSelectedButtonIndex()) {
 				case 0:
 					searchCriteria.setAssignee(LoginManager.getManager().getUser());
@@ -295,13 +295,13 @@ public class ProjectView extends Panel {
 	/*
 	 * Listen when the status changes for the search criteria.
 	 */
-	private class StatusChangeListener implements ToggleButtonGroupListener, ValueChangeListener {
+	private class StatusChangeListener implements ButtonGroupSelectionListener, ValueChangeListener {
 
 		/* (non-Javadoc)
-		 * @see com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupListener#selectedButtonChanged(com.example.bugrap.utils.ToggleButtonGroup.ToggleButtonGroupEvent)
+		 * @see org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionListener#selectedButtonChanged(org.vaadin.addons.buttongroup.ButtonGroup.ButtonGroupSelectionEvent)
 		 */
 		@Override
-		public void selectedButtonChanged(ToggleButtonGroupEvent event) {
+		public void selectedButtonChanged(ButtonGroupSelectionEvent event) {
 			// Called from the ToggleButtonGroup with all customizable statuses
 
 			switch (event.getSelectedButtonIndex()) {

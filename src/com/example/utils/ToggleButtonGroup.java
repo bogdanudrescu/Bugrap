@@ -90,11 +90,6 @@ public class ToggleButtonGroup extends ButtonGroup {
 		}
 	}
 
-	/*
-	 * The toggled style name.
-	 */
-	private final static String CSS_STYLE_TOGGLED = "toggled"; // "v-pressed";//
-
 	/**
 	 * Adds a button with the given caption to this button group. Group will be filled from left to right.
 	 * @param buttonCaption	the button caption.
@@ -139,30 +134,13 @@ public class ToggleButtonGroup extends ButtonGroup {
 	 * @param button	the button to toggle.
 	 * @return	true if the button was toggled, otherwise false.
 	 */
-	public boolean toggleButton(Button button) {
-		boolean toggleDone = false;
-		int previousButtonIndex = currentSelectedButtonIndex;
-		int selectedButtonIndex = -1;
-
-		int i = 0;
-		Iterator<Component> it = iterator();
-		while (it.hasNext()) {
-			Component nextButton = it.next();
-			if (nextButton.equals(button)) {
-				nextButton.addStyleName(CSS_STYLE_TOGGLED);
-
-				selectedButtonIndex = i;
-				toggleDone = true;
-
-			} else {
-				nextButton.removeStyleName(CSS_STYLE_TOGGLED);
+	public boolean toggleButton(final Button button) {
+		return new ButtonIndexToggler() {
+			@Override
+			protected boolean isToggleButton(Component iterateButton, int iterateIndex) {
+				return iterateButton.equals(button);
 			}
-			i++;
-		}
-
-		toggleDone(toggleDone, selectedButtonIndex, previousButtonIndex);
-
-		return toggleDone;
+		}.toggleButton();
 	}
 
 	/**
@@ -173,29 +151,59 @@ public class ToggleButtonGroup extends ButtonGroup {
 	 * @param buttonIndex	the index of the button to toggle.
 	 * @return	true if any button was toggled, otherwise false.
 	 */
-	public boolean toggleButtonIndex(int buttonIndex) {
-		boolean toggleDone = false;
-		int previousButtonIndex = currentSelectedButtonIndex;
-		int selectedButtonIndex = -1;
-
-		int i = 0;
-		Iterator<Component> it = iterator();
-		while (it.hasNext()) {
-			if (i == buttonIndex) {
-				it.next().addStyleName(CSS_STYLE_TOGGLED);
-
-				selectedButtonIndex = i;
-				toggleDone = true;
-
-			} else {
-				it.next().removeStyleName(CSS_STYLE_TOGGLED);
+	public boolean toggleButtonIndex(final int buttonIndex) {
+		return new ButtonIndexToggler() {
+			@Override
+			protected boolean isToggleButton(Component iterateButton, int iterateIndex) {
+				return iterateIndex == buttonIndex;
 			}
-			i++;
+		}.toggleButton();
+	}
+
+	/*
+	 * Implement here if the current iteration button/index is the one to be toggled.
+	 */
+	private abstract class ButtonIndexToggler {
+
+		/*
+		 * The toggled style name.
+		 */
+		private final static String CSS_STYLE_TOGGLED = "toggled"; // "v-pressed";// // "v-button-toggled";// 
+
+		/*
+		 * Gets whether to toggle the specified button/index.
+		 */
+		protected abstract boolean isToggleButton(Component iterateButton, int iterateIndex);
+
+		/*
+		 * Gets whether to toggle a button. The button to toggle will be specified by the isToggleButton method implementation.
+		 */
+		public boolean toggleButton() {
+			boolean toggleDone = false;
+			int previousButtonIndex = currentSelectedButtonIndex;
+			int selectedButtonIndex = -1;
+
+			int i = 0;
+			Iterator<Component> it = iterator();
+			while (it.hasNext()) {
+				Component nextButton = it.next();
+				if (isToggleButton(nextButton, i)) {
+					nextButton.addStyleName(CSS_STYLE_TOGGLED);
+
+					selectedButtonIndex = i;
+					toggleDone = true;
+
+				} else {
+					nextButton.removeStyleName(CSS_STYLE_TOGGLED);
+				}
+				i++;
+			}
+
+			toggleDone(toggleDone, selectedButtonIndex, previousButtonIndex);
+
+			return toggleDone;
 		}
 
-		toggleDone(toggleDone, selectedButtonIndex, previousButtonIndex);
-
-		return toggleDone;
 	}
 
 	/*

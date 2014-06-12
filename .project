@@ -3,6 +3,7 @@
 	<name>Bugrap</name>
 	<comment></comment>
 	<projects>
+		<project>bugrap-domain</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
