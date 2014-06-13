@@ -22,6 +22,7 @@ import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
 import com.example.bugrap.report.ReportEditor;
 import com.example.bugrap.report.ReportTable;
+import com.example.utils.Utils;
 import com.vaadin.data.Container;
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
@@ -88,15 +89,17 @@ public class ProjectView extends Panel {
 		// Button groups.
 		HorizontalButtonGroupLayout assigneesGroup = new HorizontalButtonGroupLayout("Only me", "Everyone");
 		assigneesGroup.setCaption("Assignees");
-		assigneesGroup.getButtonGroup().addSelectionListener(new AssigneeChangeListener());
+		assigneesGroup.getButtonGroup().setSelectedButtonIndex(buttonIndexForAssignee());
+		assigneesGroup.getButtonGroup().addSelectionListener(new AssigneeChangeListener()); // Adding this at the end.
 
 		HorizontalButtonGroupLayout statusGroup = new HorizontalButtonGroupLayout("Open", "All kinds");
 		statusGroup.setCaption("Status");
-		statusGroup.getButtonGroup().addSelectionListener(getStatusChangeListener());
 
 		PopupButton statusCustom = new PopupButton("Custom");
 		statusCustom.setContent(createStatusCustomPopup());
 		statusGroup.getButtonGroup().addButton(statusCustom);
+		statusGroup.getButtonGroup().setSelectedButtonIndex(buttonIndexForStatuses());
+		statusGroup.getButtonGroup().addSelectionListener(getStatusChangeListener()); // Adding this at the end.
 
 		// Define the layouts.
 		VerticalLayout layout = new VerticalLayout();
@@ -225,7 +228,7 @@ public class ProjectView extends Panel {
 		statusOptionGroup.setMultiSelect(true);
 		statusOptionGroup.addValueChangeListener(getStatusChangeListener());
 
-		for (Status status : Status.values()) {
+		for (Status status : Status.values()) { // This is faster then Utils.createCollectionFromEnum(Status.values()) 
 			statusOptionGroup.addItem(status);
 		}
 
@@ -293,6 +296,24 @@ public class ProjectView extends Panel {
 	}
 
 	/*
+	 * Gets the button index where the assignee is specified in searchCriteria.
+	 */
+	private int buttonIndexForAssignee() {
+		return buttonIndexForAssignee(searchCriteria.getAssignee());
+	}
+
+	/*
+	 * Gets the button index where the assignee is specified as.
+	 */
+	private static int buttonIndexForAssignee(Reporter assignee) {
+		if (assignee == null) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
+	/*
 	 * Listen when the status changes for the search criteria.
 	 */
 	private class StatusChangeListener implements ButtonGroupSelectionListener, ValueChangeListener {
@@ -327,6 +348,31 @@ public class ProjectView extends Panel {
 			// Called from the OptionGroup with all customizable statuses.
 			searchCriteria.setSelectedStatus((Collection<Status>) event.getProperty().getValue());
 			refreshReports();
+		}
+	}
+
+	/*
+	 * Gets the button index where the assignee is specified in the searchCriteria.
+	 */
+	private int buttonIndexForStatuses() {
+		return buttonIndexForStatuses(searchCriteria.getSelectedStatus());
+	}
+
+	/*
+	 * The collection of statuses.
+	 */
+	private static Collection<Status> STATUSES = Utils.createCollectionFromEnum(Status.values());
+
+	/*
+	 * Gets the button index where the assignee is specified as.
+	 */
+	private static int buttonIndexForStatuses(Collection<Status> statuses) {
+		if (statuses == null || statuses.isEmpty() || statuses.containsAll(STATUSES)) {
+			return 1;
+		} else if (statuses.size() == 1 && statuses.contains(Status.OPEN)) {
+			return 0;
+		} else {
+			return 2;
 		}
 	}
 
@@ -404,6 +450,13 @@ public class ProjectView extends Panel {
 		}
 
 		/*
+		 * Gets the assignee.
+		 */
+		Reporter getAssignee() {
+			return query.reportAssignee;
+		}
+
+		/*
 		 * Sets the status filter to Open status.
 		 */
 		void setStatusOpen() {
@@ -454,11 +507,11 @@ public class ProjectView extends Panel {
 		public void valueChange(ValueChangeEvent event) {
 			Collection<Report> reports = (Collection<Report>) event.getProperty().getValue();
 
-			System.out.println("event.getProperty(): " + event.getProperty().getClass().getName());
-			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue().getClass().getName());
-			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue());
-			System.out.println("reportTable.getValue(): " + reportTable.getValue().getClass().getName());
-			System.out.println("reportTable.getValue(): " + reportTable.getValue());
+			//			System.out.println("event.getProperty(): " + event.getProperty().getClass().getName());
+			//			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue().getClass().getName());
+			//			System.out.println("event.getProperty().getValue(): " + event.getProperty().getValue());
+			//			System.out.println("reportTable.getValue(): " + reportTable.getValue().getClass().getName());
+			//			System.out.println("reportTable.getValue(): " + reportTable.getValue());
 
 			reportEditor.setReport(reports.iterator().next()); // TODO: call setReports.
 		}

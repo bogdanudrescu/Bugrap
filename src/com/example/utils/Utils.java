@@ -1,6 +1,8 @@
 package com.example.utils;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 
 import com.vaadin.data.Container;
@@ -14,7 +16,7 @@ import com.vaadin.data.util.BeanItemContainer;
 public class Utils {
 
 	/**
-	 * Data container with the types.
+	 * Creates a Vaadin Data Container with the enum types.
 	 * @param enumClass	the enumeration class.
 	 * @param values	the enumeration values.
 	 * @return	a Container filled with all the values of the enumeration as items.
@@ -23,6 +25,19 @@ public class Utils {
 		Container container = new BeanItemContainer<ENUM_TYPE>(enumClass);
 		for (ENUM_TYPE value : values) {
 			container.addItem(value);
+		}
+		return container;
+	}
+
+	/**
+	 * Create a {@link Collection} with the enum types.
+	 * @param values	the enumeration values.
+	 * @return	a Container filled with all the values of the enumeration as items.
+	 */
+	public static <ENUM_TYPE> Collection<ENUM_TYPE> createCollectionFromEnum(ENUM_TYPE[] values) {
+		Collection<ENUM_TYPE> container = new ArrayList<ENUM_TYPE>(values.length);
+		for (ENUM_TYPE value : values) {
+			container.add(value);
 		}
 		return container;
 	}
@@ -39,7 +54,7 @@ public class Utils {
 	 * @param date	the date to process.
 	 * @return	the string representation.
 	 */
-	public static String stringIntervalFromDate(Date date) {
+	public static String stringIntervalFromDateUntilNow(Date date) {
 
 		// TODO: Well we can optimize these calendars...
 		//*

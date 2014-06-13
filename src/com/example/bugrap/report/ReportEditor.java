@@ -12,6 +12,7 @@ import org.vaadin.bugrap.domain.entities.Report.Type;
 import org.vaadin.bugrap.domain.entities.Reporter;
 
 import com.example.bugrap.data.DataManager;
+import com.example.bugrap.report.CommentProducer.CommentProducerDelegate;
 import com.example.utils.Utils;
 import com.vaadin.data.fieldgroup.FieldGroup;
 import com.vaadin.data.fieldgroup.FieldGroup.CommitException;
@@ -26,7 +27,6 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.TextArea;
 import com.vaadin.ui.VerticalLayout;
 
 /**
@@ -63,6 +63,11 @@ public class ReportEditor extends Panel {
 	 */
 	private Label breadcrumbsLabel;
 
+	/*
+	 * The comments view.
+	 */
+	private CommentsView commentsView;
+
 	/**
 	 * Create a new report editor.
 	 */
@@ -79,11 +84,11 @@ public class ReportEditor extends Panel {
 		layout.addComponent(createTitleArea());
 		layout.addComponent(createPropertiesArea());
 
-		Component descriptionArea = createDescriptionArea();
+		Component descriptionArea = createCommentsArea();
 		layout.addComponent(descriptionArea);
 		layout.setExpandRatio(descriptionArea, 0.5f); // FIXME This doesn't work when resize.
 
-		Component commentArea = createCommentArea();
+		Component commentArea = createNewCommentArea();
 		layout.addComponent(commentArea);
 		layout.setExpandRatio(commentArea, 0.5f);
 
@@ -115,28 +120,6 @@ public class ReportEditor extends Panel {
 		layout.addComponent(breadcrumbsLabel);
 
 		return layout;
-	}
-
-	/*
-	 * Create the comment area.
-	 */
-	private Component createCommentArea() {
-
-		Panel panel = new Panel();
-		panel.setSizeFull();
-
-		return panel;
-	}
-
-	/*
-	 * Create the description area.
-	 */
-	private Component createDescriptionArea() {
-		TextArea descriptionArea = new TextArea();
-		descriptionArea.setSizeFull();
-		binder.bind(descriptionArea, "description");
-
-		return descriptionArea;
 	}
 
 	/*
@@ -201,6 +184,50 @@ public class ReportEditor extends Panel {
 		return layout;
 	}
 
+	/*
+	 * Create the comment area.
+	 */
+	private Component createNewCommentArea() {
+
+		CommentProducer commentProducer = new CommentProducer();
+		commentProducer.setSizeFull();
+		commentProducer.setDelegate(new CommentProducerDelegateImpl());
+
+		return commentProducer;
+	}
+
+	/*
+	 * Create the description area.
+	 */
+	private Component createCommentsArea() {
+		commentsView = new CommentsView();
+		commentsView.setSizeFull();
+
+		return commentsView;
+	}
+
+	private class CommentProducerDelegateImpl implements CommentProducerDelegate {
+
+		/* (non-Javadoc)
+		 * @see com.example.bugrap.report.CommentProducer.CommentProducerDelegate#commentAdded(java.lang.String)
+		 */
+		@Override
+		public boolean commentAdded(String comment) {
+			commentsView.addComment(comment);
+			return true;
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.bugrap.report.CommentProducer.CommentProducerDelegate#attachmentAdded(java.lang.String, byte[])
+		 */
+		@Override
+		public boolean attachmentAdded(String attachmentName, byte[] attachment) {
+			commentsView.addAttachment(attachmentName, attachment);
+			return true;
+		}
+
+	}
+
 	/**
 	 * Sets the report object.
 	 * @param report	the report to set.
@@ -219,6 +246,7 @@ public class ReportEditor extends Panel {
 		//this.report = report;
 		binder.setItemDataSource(new BeanItem<Report>(report));
 
+		commentsView.setReport(report);
 	}
 
 	/*

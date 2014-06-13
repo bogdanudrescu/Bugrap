@@ -80,7 +80,7 @@ public class ReportTable extends Table {
 			Property<Date> property = source.getContainerProperty(itemId, columnId);
 
 			if (property != null && property.getType().equals(Date.class)) {
-				return new Label(Utils.stringIntervalFromDate(property.getValue()));
+				return new Label(Utils.stringIntervalFromDateUntilNow(property.getValue()));
 			}
 
 			return null;
