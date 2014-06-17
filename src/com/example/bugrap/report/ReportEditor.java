@@ -206,6 +206,9 @@ public class ReportEditor extends Panel {
 		return commentsView;
 	}
 
+	/*
+	 * Listen to the comment producer and add the data to the viewer to display it to the user and store it in the persistance layer.
+	 */
 	private class CommentProducerDelegateImpl implements CommentProducerDelegate {
 
 		/* (non-Javadoc)

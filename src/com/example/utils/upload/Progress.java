@@ -1,6 +1,7 @@
 package com.example.utils.upload;
 
 import com.vaadin.server.ClassResource;
+import com.vaadin.shared.communication.PushMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
@@ -8,16 +9,19 @@ import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.ProgressBar;
+import com.vaadin.ui.UI;
 
 /**
  * Component to show the progress of a file. It provides also cancel input from user through the delegate.
  * <br/>
  * This component actually uploads no file, but only show the progress. The progress should be updated by the actual uploader.
+ * <br/>
+ * Set the push mode on the UI to have this actually work. 
  * 
  * @author bogdanudrescu
  */
 @SuppressWarnings("serial")
-public class UploadInfo extends CustomComponent {
+public class Progress extends CustomComponent {
 
 	/*
 	 * The label with the file name.
@@ -28,6 +32,9 @@ public class UploadInfo extends CustomComponent {
 	 * The progress bar.
 	 */
 	private ProgressBar progressBar = new ProgressBar();
+	{
+		progressBar.setImmediate(true);
+	}
 
 	/*
 	 * The cancel button.
@@ -37,7 +44,7 @@ public class UploadInfo extends CustomComponent {
 	/*
 	 * The size of the file in bytes.
 	 */
-	private long bytesCount = -1;
+	private long contentLength = -1;
 
 	/*
 	 * The composition root.
@@ -47,31 +54,54 @@ public class UploadInfo extends CustomComponent {
 	/**
 	 * Create an upload progress component for a file with the specified name.
 	 * @param fileName		the name of the file being uploaded.
-	 * @param bytesCount	the size of the file in bytes.
+	 * @param contentLength	the size of the file in bytes.
 	 */
-	public UploadInfo(String fileName, long bytesCount) {
-		nameLabel.setValue(fileName);
-
-		if (bytesCount < 0) {
-			progressBar.setIndeterminate(true);
-		}
+	public Progress(String fileName, long contentLength) {
 
 		cancelButton.addClickListener(new CancelButtonListener());
 
 		layout = new HorizontalLayout();
 		layout.addComponent(nameLabel);
-		layout.addComponent(progressBar);
 		layout.addComponent(cancelButton);
 
 		setCompositionRoot(layout);
+
+		// Call reset for code optimization.
+		reset(fileName, contentLength);
+	}
+
+	/**
+	 * Reset the component.
+	 * @param fileName		the new file name.
+	 * @param contentLength	the new content length.
+	 */
+	public void reset(String fileName, long contentLength) {
+		nameLabel.setValue(fileName);
+		this.contentLength = contentLength;
+
+		if (contentLength < 0) {
+			progressBar.setIndeterminate(true);
+		}
+
+		layout.addComponent(progressBar, 1);
 	}
 
 	/**
 	 * Sets the count of the bytes read so far.
-	 * @param currentBytesCount	the current count of the bytes read. 
+	 * @param currentBytesCount	the current count of the bytes read.
 	 */
-	public void setCurrentBytesRead(long currentBytesCount) {
-		progressBar.setValue((float) currentBytesCount / bytesCount);
+	public void setProgressValue(final long currentBytesCount) {
+		//System.out.println("setProgressValue: " + currentBytesCount + " of " + contentLength);
+
+		if (!progressBar.isIndeterminate()) {
+			progressBar.setValue((float) currentBytesCount / contentLength);
+
+			// Update the browser client.
+			UI currentUI = UI.getCurrent();
+			if (currentUI.getPushConfiguration().getPushMode() == PushMode.MANUAL) {
+				currentUI.push();
+			}
+		}
 	}
 
 	/**
@@ -87,7 +117,8 @@ public class UploadInfo extends CustomComponent {
 	public void setProgressFail() {
 		layout.removeComponent(progressBar);
 
-		layout.addComponent(new Label("Failed"), 1);
+		// TODO: shall we have something like this?
+		// layout.addComponent(new Label("Failed"), 1);
 	}
 
 	/*
@@ -102,7 +133,7 @@ public class UploadInfo extends CustomComponent {
 		public void buttonClick(ClickEvent event) {
 			// TODO: ask again if the user is sure he wants to cancel.
 
-			delegate.cancelUpload(UploadInfo.this);
+			delegate.cancelUpload(Progress.this);
 		}
 
 	}
@@ -110,32 +141,32 @@ public class UploadInfo extends CustomComponent {
 	/*
 	 * The upload info delegate.
 	 */
-	private UploadInfoDelegate delegate;
+	private ProgressDelegate delegate;
 
 	/**
 	 * Sets the delegate for this upload info component.
 	 * @param delegate	the delegate to handle the cancel action.
 	 */
-	public void setDelegate(UploadInfoDelegate delegate) {
+	public void setDelegate(ProgressDelegate delegate) {
 		this.delegate = delegate;
 	}
 
 	/**
 	 * Delegate to inform that the upload should cancel.
 	 */
-	public static interface UploadInfoDelegate {
+	public static interface ProgressDelegate {
 
 		/**
 		 * Call when the user wishes to cancel the upload.
-		 * @param uploadInfo	the {@link UploadInfo} source object.
+		 * @param uploadInfo	the {@link Progress} source object.
 		 */
-		void cancelUpload(UploadInfo uploadInfo);
+		void cancelUpload(Progress uploadInfo);
 
 		/**
 		 * Called in case the upload failed and user wants to retry.
-		 * @param uploadInfo	the {@link UploadInfo} source object.
+		 * @param uploadInfo	the {@link Progress} source object.
 		 */
-		void retryUpload(UploadInfo uploadInfo); // TODO: Call this.
+		void retryUpload(Progress uploadInfo); // TODO: Implement the call of this method.
 
 	}
 

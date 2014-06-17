@@ -1,29 +1,21 @@
 package com.example.bugrap.report;
 
-import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
-import com.example.utils.upload.UploadGroupComponent;
+import org.apache.commons.lang3.StringUtils;
+
+import com.example.utils.upload.HorizontalUploadGroup;
+import com.example.utils.upload.UploadProducer.UploadProducerAdapter;
+import com.example.utils.upload.UploadProgress;
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.Panel;
-import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.TextArea;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.Upload.FailedEvent;
-import com.vaadin.ui.Upload.FailedListener;
-import com.vaadin.ui.Upload.ProgressListener;
-import com.vaadin.ui.Upload.Receiver;
-import com.vaadin.ui.Upload.StartedEvent;
-import com.vaadin.ui.Upload.StartedListener;
-import com.vaadin.ui.Upload.SucceededEvent;
-import com.vaadin.ui.Upload.SucceededListener;
 import com.vaadin.ui.VerticalLayout;
 
 /**
@@ -31,12 +23,23 @@ import com.vaadin.ui.VerticalLayout;
  * 
  * @author bogdanudrescu
  */
+@SuppressWarnings("serial")
 public class CommentProducer extends Panel {
 
 	/*
 	 * The comment text property.
 	 */
 	private ObjectProperty<String> comment = new ObjectProperty<String>("");
+
+	/*
+	 * The upload listener.
+	 */
+	private UploadProducerHandler uploadListener;
+
+	/*
+	 * The upload group component.
+	 */
+	private HorizontalUploadGroup uploadGroup;
 
 	/**
 	 * Create a new comment editor.
@@ -45,114 +48,45 @@ public class CommentProducer extends Panel {
 
 		// Button for actions.
 		Button doneButton = new Button("Done"); // Add a V green icon ;)
+		doneButton.addClickListener(new DoneButtonListener());
 		//Button attachButton = new Button("Attachment...");
 		Button cancelButton = new Button("Cancel");
-
-		uploadPanel = new Panel();
+		cancelButton.addClickListener(new CancelButtonListener());
 
 		// Other layout settings
 		TextArea commentArea = new TextArea(comment);
 		commentArea.setSizeFull();
 
-		UploadGroupComponent uploadGroupComponent = new UploadGroupComponent();
+		uploadListener = new UploadProducerHandler();
+		uploadGroup = new HorizontalUploadGroup();
+		uploadGroup.getProducer().addUploadProducerListener(uploadListener);
 
-		HorizontalLayout buttonsLayout = new HorizontalLayout(doneButton, uploadPanel, cancelButton);
+		HorizontalLayout buttonsLayout = new HorizontalLayout(doneButton, cancelButton);
 
-		VerticalLayout layout = new VerticalLayout(commentArea, uploadGroupComponent, buttonsLayout);
+		VerticalLayout layout = new VerticalLayout(commentArea, uploadGroup, buttonsLayout);
 		layout.setMargin(true);
 		layout.setExpandRatio(commentArea, 1);
 
 		setContent(layout);
-
-		//addNewUploadComponent();
 	}
 
 	/*
-	 * The upload panel to hold only one upload instance.
+	 * Listen to upload events.
 	 */
-	private Panel uploadPanel;
-
-	/*
-	 * Add a new upload component when the upload starts for the current one.
-	 */
-	private void addNewUploadComponent() {
-		AttachmentReceiver attachmentReceiver = new AttachmentReceiver();
-
-		Upload upload = new Upload();
-		upload.setReceiver(attachmentReceiver);
-		upload.addStartedListener(attachmentReceiver);
-		upload.addProgressListener(attachmentReceiver);
-		upload.addSucceededListener(attachmentReceiver);
-		upload.addFailedListener(attachmentReceiver);
-
-		uploadPanel.setContent(upload);
-	}
-
-	/*
-	 * The list of current upload components. New Upload components are added when a upload starts.
-	 */
-	private List<Upload> currentUploads = new ArrayList<>();
-
-	/*
-	 * Used to upload attachment files.
-	 */
-	private class AttachmentReceiver implements Receiver, StartedListener, ProgressListener, SucceededListener, FailedListener {
+	private class UploadProducerHandler extends UploadProducerAdapter {
 
 		/*
-		 * The progress bar.
+		 * The list of current upload components. New Upload components are added when a upload starts.
 		 */
-		private ProgressBar progressBar;
+		private List<UploadProgress> currentUploads = new LinkedList<>();
 
 		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Upload.Receiver#receiveUpload(java.lang.String, java.lang.String)
+		 * @see com.example.utils.upload.UploadProducer.UploadProducerAdapter#uploadDone(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public OutputStream receiveUpload(String filename, String mimeType) {
-			// TODO Auto-generated method stub
-			return null;
+		public void uploadDone(UploadProgress uploadProgress) {
+			currentUploads.add(uploadProgress);
 		}
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Upload.StartedListener#uploadStarted(com.vaadin.ui.Upload.StartedEvent)
-		 */
-		@Override
-		public void uploadStarted(StartedEvent event) {
-			currentUploads.add(event.getUpload());
-
-			addNewUploadComponent();
-
-			progressBar = new ProgressBar();
-		}
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Upload.ProgressListener#updateProgress(long, long)
-		 */
-		@Override
-		public void updateProgress(long readBytes, long contentLength) {
-			// TODO Auto-generated method stub
-
-		}
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Upload.SucceededListener#uploadSucceeded(com.vaadin.ui.Upload.SucceededEvent)
-		 */
-		@Override
-		public void uploadSucceeded(SucceededEvent event) {
-			currentUploads.remove(event.getUpload());
-
-			Notification.show("Upload succedded");
-		}
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Upload.FailedListener#uploadFailed(com.vaadin.ui.Upload.FailedEvent)
-		 */
-		@Override
-		public void uploadFailed(FailedEvent event) {
-			currentUploads.remove(event.getUpload());
-
-			Notification.show("Upload failed", Type.ERROR_MESSAGE);
-		}
-
 	}
 
 	/*
@@ -165,23 +99,18 @@ public class CommentProducer extends Panel {
 		 */
 		@Override
 		public void buttonClick(ClickEvent event) {
-			// TODO Auto-generated method stub
+			if (delegate != null) {
+				if (!StringUtils.isEmpty(comment.getValue())) {
+					delegate.commentAdded(comment.getValue());
+				}
 
-		}
+				Iterator<UploadProgress> iterator = uploadListener.currentUploads.iterator();
+				while (iterator.hasNext()) {
+					UploadProgress upload = (UploadProgress) iterator.next();
+					delegate.attachmentAdded(upload.getUploadFileName(), upload.getUploadBytes());
+				}
 
-	}
-
-	/*
-	 * Listen to the Attach button click.
-	 */
-	private class AttachButtonListener implements ClickListener {
-
-		/* (non-Javadoc)
-		 * @see com.vaadin.ui.Button.ClickListener#buttonClick(com.vaadin.ui.Button.ClickEvent)
-		 */
-		@Override
-		public void buttonClick(ClickEvent event) {
-
+			}
 		}
 
 	}

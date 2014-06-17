@@ -1,74 +1,89 @@
 package com.example.utils.upload;
 
+import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener;
-import com.example.utils.upload.UploadProgressInfo.UploadStatus;
+import com.example.utils.upload.UploadProgress.UploadProgressListener;
+import com.example.utils.upload.UploadProgress.UploadStatus;
+import com.vaadin.ui.Upload.Receiver;
 
 /**
- * Produce UploadProgressInfos as needed.
+ * Produce UploadProgresss as needed.
  * 
  * @author bogdanudrescu
  */
-public class UploadProducer {
+@SuppressWarnings("serial")
+public class UploadProducer implements Serializable {
 
 	/*
 	 * Listen to each upload events.
 	 */
-	private UploadProgressInfoHandler handler = new UploadProgressInfoHandler();
-
-	/*
-	 * The initial number of upload components.
-	 */
-	private int initialUploads;
+	private UploadProgressHandler handler = new UploadProgressHandler();
 
 	/**
 	 * Create the group with 1 Upload.
+	 * @param listener			listener to be notified when the UploadProgress components are created.
 	 */
-	public UploadProducer() {
-		this(1);
+	public UploadProducer(UploadProducerListener listener) {
+		this(1, listener);
 	}
 
 	/**
 	 * Create the group with few initial uploads.
 	 * @param initialUploads	the number of uploads to produce when this goes online.
+	 * @param listener			listener to be notified when the UploadProgress components are created.
 	 */
-	public UploadProducer(int initialUploads) {
-		this.initialUploads = initialUploads;
+	public UploadProducer(int initialUploads, UploadProducerListener listener) {
+		// First add the listener.
+		addUploadProducerListener(listener);
+
+		// Then creates the initial upload components.
+		for (int i = 0; i < initialUploads; i++) {
+			produceUpload();
+		}
 	}
+
+	// TODO: maybe set a maximum upload components allowed.
 
 	/*
 	 * The uploads.
 	 */
-	private List<UploadProgressInfo> uploads = new LinkedList<>(); // Maybe this is faster then ArrayList in our case...
+	private List<UploadProgress> uploads = new LinkedList<>(); // Maybe this is faster then ArrayList in our case...
 
 	/**
 	 * Gets the number of upload components.
 	 * @return	the number of upload components.
 	 */
+	// TODO: maybe add methods to retrieve the upload components.
+	/*
 	public int getUploadCount() {
 		return uploads.size();
 	}
-
-	// TODO: add methods to retrieve the upload components.
+	//*/
 
 	/**
-	 * Start producing the uploads.
+	 * Remove the specified upload progress component.
+	 * @param uploadProgress	the component to remove.
 	 */
-	public void produceUploads() {
-		for (int i = 0; i < initialUploads; i++) {
-			produceUpload();
+	public void removeUpload(UploadProgress uploadProgress) {
+		synchronized (UploadProducer.this) {
+
+			// This doesn't need to synchronize
+			if (uploads.remove(uploadProgress)) {
+				fireShouldRemoveUpload(uploadProgress);
+			}
 		}
+
 	}
 
 	/*
 	 * Produce a new upload.
 	 */
 	private void produceUpload() {
-		UploadProgressInfo upload = new UploadProgressInfo(handler);
+		UploadProgress upload = new UploadProgress(handler);
 		addAllListenersToUpload(upload);
 
 		uploads.add(upload);
@@ -82,7 +97,7 @@ public class UploadProducer {
 	private boolean isAnyUploadAvailable() {
 		EnumSet<UploadStatus> enumSet = EnumSet.noneOf(UploadStatus.class); // This should be slow though, but it's fancy enough.
 
-		Iterator<UploadProgressInfo> iterator = uploads.iterator();
+		Iterator<UploadProgress> iterator = uploads.iterator();
 		while (iterator.hasNext()) {
 			enumSet.add(iterator.next().getStatus());
 		}
@@ -93,27 +108,27 @@ public class UploadProducer {
 	/*
 	 * Manage the upload events.
 	 */
-	class UploadProgressInfoHandler implements UploadProgressInfoListener {
+	class UploadProgressHandler implements UploadProgressListener {
 
 		/* (non-Javadoc)
-		 * @see com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener#shouldRemoveUploadComponent(com.example.utils.upload.UploadProgressInfo)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#shouldRemoveUploadComponent(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public void shouldRemoveUploadComponent(UploadProgressInfo uploadProgressInfo) {
+		public void shouldRemoveUploadProgress(UploadProgress uploadProgress) {
 			synchronized (UploadProducer.this) {
 
 				// This doesn't need to synchronize
-				uploads.remove(uploadProgressInfo);
+				uploads.remove(uploadProgress);
 
-				// uploadProgressInfo.removeUploadListener(this); // FIXME: either this or just remove the listeners automatically from the upload component directly. Any way there will be no further events...
+				// uploadProgress.removeUploadListener(this); // FIXME: either this or just remove the listeners automatically from the upload component directly. Any way there will be no further events...
 			}
 		}
 
 		/* (non-Javadoc)
-		 * @see com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener#uploadStarted(com.example.utils.upload.UploadProgressInfo)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadStarted(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public void uploadStarted(UploadProgressInfo uploadProgressInfo) {
+		public void uploadStarted(UploadProgress uploadProgress) {
 			synchronized (UploadProducer.this) { // Synch on UploadProducer.this otherwise we'll end up in a deadlock with the listener calls. 
 
 				if (!isAnyUploadAvailable()) {
@@ -123,24 +138,24 @@ public class UploadProducer {
 		}
 
 		/* (non-Javadoc)
-		 * @see com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener#uploadFailed(com.example.utils.upload.UploadProgressInfo)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadFailed(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public void uploadFailed(UploadProgressInfo uploadProgressInfo) {
+		public void uploadFailed(UploadProgress uploadProgress) {
 		}
 
 		/* (non-Javadoc)
-		 * @see com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener#uploadCanceled(com.example.utils.upload.UploadProgressInfo)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadCanceled(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public void uploadCanceled(UploadProgressInfo uploadProgressInfo) {
+		public void uploadCanceled(UploadProgress uploadProgress) {
 		}
 
 		/* (non-Javadoc)
-		 * @see com.example.utils.upload.UploadProgressInfo.UploadProgressInfoListener#uploadDone(com.example.utils.upload.UploadProgressInfo)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadDone(com.example.utils.upload.UploadProgress)
 		 */
 		@Override
-		public void uploadDone(UploadProgressInfo uploadProgressInfo) {
+		public void uploadDone(UploadProgress uploadProgress) {
 		}
 
 	}
@@ -154,7 +169,7 @@ public class UploadProducer {
 	 * Adds an upload listener.
 	 * @param listener	the listener to add.
 	 */
-	public synchronized void addUploadListener(UploadProducerListener listener) {
+	public synchronized void addUploadProducerListener(UploadProducerListener listener) {
 		listeners.add(listener);
 
 		addListenerToAllUploads(listener);
@@ -164,7 +179,7 @@ public class UploadProducer {
 	 * Adds an upload listener.
 	 * @param listener	the listener to add.
 	 */
-	public synchronized void removeUploadListener(UploadProducerListener listener) {
+	public synchronized void removeUploadProducerListener(UploadProducerListener listener) {
 		listeners.remove(listener);
 
 		removeListenerFromAllUploads(listener);
@@ -174,7 +189,7 @@ public class UploadProducer {
 	 * Add the specified listener to all uploads.
 	 */
 	private synchronized void addListenerToAllUploads(UploadProducerListener listener) {
-		for (UploadProgressInfo upload : uploads) {
+		for (UploadProgress upload : uploads) {
 			upload.addUploadListener(listener);
 		}
 	}
@@ -183,7 +198,7 @@ public class UploadProducer {
 	 * Add the specified listener to all uploads.
 	 */
 	private synchronized void removeListenerFromAllUploads(UploadProducerListener listener) {
-		for (UploadProgressInfo upload : uploads) {
+		for (UploadProgress upload : uploads) {
 			upload.removeUploadListener(listener);
 		}
 	}
@@ -191,7 +206,7 @@ public class UploadProducer {
 	/*
 	 * Add all listeners to the specified upload.
 	 */
-	private synchronized void addAllListenersToUpload(UploadProgressInfo upload) {
+	private synchronized void addAllListenersToUpload(UploadProgress upload) {
 		for (UploadProducerListener listener : listeners) {
 			upload.addUploadListener(listener);
 		}
@@ -201,7 +216,7 @@ public class UploadProducer {
 	 * Remove all the listeners from the specified upload.
 	 * @deprecated dangerous method to remove all listeners.
 	 */
-	private synchronized void removeAllListenersFromUpload(UploadProgressInfo upload) {
+	private synchronized void removeAllListenersFromUpload(UploadProgress upload) {
 		for (UploadProducerListener listener : listeners) {
 			upload.removeUploadListener(listener);
 		}
@@ -209,24 +224,86 @@ public class UploadProducer {
 
 	/**
 	 * Produce an upload component.
-	 * @param uploadProgressInfo	the component produced.
+	 * @param upload	the component produced.
 	 */
-	protected synchronized void fireUploadProduced(UploadProgressInfo uploadProgressInfo) {
+	protected synchronized void fireUploadProduced(UploadProgress upload) {
 		for (UploadProducerListener listener : listeners) {
-			listener.uploadProduced(uploadProgressInfo);
+			listener.uploadProgressProduced(upload);
+		}
+	}
+
+	/**
+	 * Notify when an upload component should be removed from the UI.
+	 * @param upload	the component to remove.
+	 */
+	protected synchronized void fireShouldRemoveUpload(UploadProgress upload) {
+		for (UploadProducerListener listener : listeners) {
+			listener.shouldRemoveUploadProgress(upload);
 		}
 	}
 
 	/**
 	 * Receive notifications when the uploads are produced and when files are uploaded.
 	 */
-	public interface UploadProducerListener extends UploadProgressInfoListener {
+	public interface UploadProducerListener extends UploadProgressListener {
 
 		/**
 		 * Produce an upload component.
-		 * @param uploadProgressInfo	the component produced.
+		 * <br/>
+		 * On this method, the user can add a {@link Receiver} in case it wants to receive the data through its own stream.
+		 * Otherwise it can obtain the data when the {@link #uploadDone(UploadProgress)} method gets called.
+		 * @param uploadProgress	the component produced.
 		 */
-		void uploadProduced(UploadProgressInfo uploadProgressInfo);
+		void uploadProgressProduced(UploadProgress uploadProgress);
+
+	}
+
+	/**
+	 * Adapter with no body implementation for any of the methods.
+	 */
+	public static abstract class UploadProducerAdapter implements UploadProducerListener {
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#shouldRemoveUploadProgress(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void shouldRemoveUploadProgress(UploadProgress uploadProgress) {
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadStarted(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void uploadStarted(UploadProgress uploadProgress) {
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadFailed(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void uploadFailed(UploadProgress uploadProgress) {
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadCanceled(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void uploadCanceled(UploadProgress uploadProgress) {
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProgress.UploadProgressListener#uploadDone(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void uploadDone(UploadProgress uploadProgress) {
+		}
+
+		/* (non-Javadoc)
+		 * @see com.example.utils.upload.UploadProducer.UploadProducerListener#uploadProgressProduced(com.example.utils.upload.UploadProgress)
+		 */
+		@Override
+		public void uploadProgressProduced(UploadProgress uploadProgress) {
+		}
 
 	}
 

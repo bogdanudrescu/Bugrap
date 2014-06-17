@@ -6,12 +6,14 @@ import org.vaadin.bugrap.domain.BugrapRepository;
 
 import com.example.bugrap.LoginPage.LoginDelegate;
 import com.example.bugrap.data.DataManager;
+import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
+import com.vaadin.shared.communication.PushMode;
 import com.vaadin.ui.UI;
 
 /**
@@ -19,6 +21,7 @@ import com.vaadin.ui.UI;
  */
 @SuppressWarnings("serial")
 @Theme("bugrap")
+@Push(PushMode.MANUAL)
 public class BugrapUI extends UI {
 
 	@WebServlet(value = "/*", asyncSupported = true)

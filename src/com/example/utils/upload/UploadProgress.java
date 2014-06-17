@@ -2,11 +2,12 @@ package com.example.utils.upload;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.example.utils.upload.UploadInfo.UploadInfoDelegate;
+import com.example.utils.upload.Progress.ProgressDelegate;
 import com.vaadin.ui.CustomComponent;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
@@ -30,7 +31,7 @@ import com.vaadin.ui.Upload.SucceededListener;
  *
  */
 @SuppressWarnings("serial")
-public class UploadProgressInfo extends CustomComponent {
+public class UploadProgress extends CustomComponent {
 
 	/*
 	 * The upload component.
@@ -45,7 +46,7 @@ public class UploadProgressInfo extends CustomComponent {
 	/**
 	 * Create an upload progress info component.
 	 */
-	public UploadProgressInfo() {
+	public UploadProgress() {
 		this(null);
 	}
 
@@ -53,7 +54,7 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Create an upload progress info component. 
 	 * @param listener	the initial upload listener.
 	 */
-	public UploadProgressInfo(UploadProgressInfoListener listener) {
+	public UploadProgress(UploadProgressListener listener) {
 		addUploadListener(listener);
 
 		upload = new Upload();
@@ -64,6 +65,16 @@ public class UploadProgressInfo extends CustomComponent {
 		upload.addFailedListener(uploadEventsHandler);
 
 		setCompositionRoot(upload);
+	}
+
+	/* (non-Javadoc)
+	 * @see com.vaadin.ui.AbstractComponent#detach()
+	 */
+	@Override
+	public void detach() {
+		// TODO Implement this?
+
+		super.detach();
 	}
 
 	/**
@@ -121,12 +132,12 @@ public class UploadProgressInfo extends CustomComponent {
 	/*
 	 * Used to upload attachment files.
 	 */
-	private class UploadEventsHandler implements Receiver, StartedListener, ProgressListener, SucceededListener, FailedListener, UploadInfoDelegate {
+	private class UploadEventsHandler implements Receiver, StartedListener, ProgressListener, SucceededListener, FailedListener, ProgressDelegate {
 
 		/*
 		 * The upload info component.
 		 */
-		private UploadInfo uploadInfo;
+		private Progress uploadInfo;
 
 		/*
 		 * The name of the file being uploaded.
@@ -175,8 +186,11 @@ public class UploadProgressInfo extends CustomComponent {
 		@Override
 		public void uploadStarted(StartedEvent event) {
 			if (uploadInfo == null) {
-				uploadInfo = new UploadInfo(event.getFilename(), event.getContentLength());
+				uploadInfo = new Progress(event.getFilename(), event.getContentLength());
 				uploadInfo.setDelegate(this);
+
+			} else {
+				uploadInfo.reset(event.getFilename(), event.getContentLength());
 			}
 
 			setCompositionRoot(uploadInfo);
@@ -190,9 +204,7 @@ public class UploadProgressInfo extends CustomComponent {
 		 */
 		@Override
 		public void updateProgress(long readBytes, long contentLength) {
-			System.out.println("updateProgress: " + readBytes + ", " + contentLength);
-
-			uploadInfo.setCurrentBytesRead(readBytes);
+			uploadInfo.setProgressValue(readBytes);
 		}
 
 		/* (non-Javadoc)
@@ -231,7 +243,7 @@ public class UploadProgressInfo extends CustomComponent {
 		 * @see com.example.utils.UploadInfo.UploadInfoDelegate#cancelUpload(com.example.utils.UploadInfo)
 		 */
 		@Override
-		public void cancelUpload(UploadInfo uploadInfo) {
+		public void cancelUpload(Progress uploadInfo) {
 			if (upload.isUploading()) {
 
 				upload.interruptUpload();
@@ -252,7 +264,7 @@ public class UploadProgressInfo extends CustomComponent {
 		 * @see com.example.utils.UploadInfo.UploadInfoDelegate#retryUpload(com.example.utils.UploadInfo)
 		 */
 		@Override
-		public void retryUpload(UploadInfo uploadInfo) {
+		public void retryUpload(Progress uploadInfo) {
 			// TODO Auto-generated method stub
 		}
 
@@ -307,7 +319,7 @@ public class UploadProgressInfo extends CustomComponent {
 
 		} else if (uploadEventsHandler.stream == null) {
 			throw new UploadException(
-					"OutputStream and other upload info handled in the UploadProgressInfoDelegate already. Check your delegate implementation and access the data in receiveUpload method you implemented.");
+					"OutputStream and other upload info handled in the UploadProgressListener already. Check your delegate implementation and access the data in receiveUpload method you implemented.");
 		}
 
 	}
@@ -315,13 +327,13 @@ public class UploadProgressInfo extends CustomComponent {
 	/*
 	 * The delegate.
 	 */
-	private List<UploadProgressInfoListener> listeners = new LinkedList<>();
+	private List<UploadProgressListener> listeners = new LinkedList<>();
 
 	/**
 	 * Adds an upload listener.
 	 * @param listener	the listener to add.
 	 */
-	public synchronized void addUploadListener(UploadProgressInfoListener listener) {
+	public synchronized void addUploadListener(UploadProgressListener listener) {
 		listeners.add(listener);
 	}
 
@@ -329,7 +341,7 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Remove the specified upload listener.
 	 * @param listener	the listener to remove.
 	 */
-	public synchronized void removeUploadListener(UploadProgressInfoListener listener) {
+	public synchronized void removeUploadListener(UploadProgressListener listener) {
 		listeners.remove(listener);
 	}
 
@@ -337,9 +349,9 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Inform the API user that the upload should be removed.
 	 */
 	protected synchronized void fireShouldRemoveUploadComponent() {
-		Iterator<UploadProgressInfoListener> iterator = listeners.iterator();
+		Iterator<UploadProgressListener> iterator = listeners.iterator();
 		while (iterator.hasNext()) {
-			iterator.next().shouldRemoveUploadComponent(this);
+			iterator.next().shouldRemoveUploadProgress(this);
 		}
 
 		// We won't send any events so no need for listeners from now on.
@@ -350,7 +362,7 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Called when the upload starts. 
 	 */
 	protected synchronized void fireUploadStarted() {
-		Iterator<UploadProgressInfoListener> iterator = listeners.iterator();
+		Iterator<UploadProgressListener> iterator = listeners.iterator();
 		while (iterator.hasNext()) {
 			iterator.next().uploadStarted(this);
 		}
@@ -360,7 +372,7 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Called when the upload failed. 
 	 */
 	protected synchronized void fireUploadFailed() {
-		Iterator<UploadProgressInfoListener> iterator = listeners.iterator();
+		Iterator<UploadProgressListener> iterator = listeners.iterator();
 		while (iterator.hasNext()) {
 			iterator.next().uploadFailed(this);
 		}
@@ -370,7 +382,7 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Called when the upload is cancel by the user. 
 	 */
 	protected synchronized void fireUploadCanceled() {
-		Iterator<UploadProgressInfoListener> iterator = listeners.iterator();
+		Iterator<UploadProgressListener> iterator = listeners.iterator();
 		while (iterator.hasNext()) {
 			iterator.next().uploadCanceled(this);
 		}
@@ -380,52 +392,52 @@ public class UploadProgressInfo extends CustomComponent {
 	 * Called when the upload is being successful, hopefully. 
 	 */
 	protected synchronized void fireUploadDone() {
-		Iterator<UploadProgressInfoListener> iterator = listeners.iterator(); // TODO: This how to write all fire methods with one call, without the iteration loop here.
+		Iterator<UploadProgressListener> iterator = listeners.iterator(); // TODO: This how to write all fire methods with one call, without the iteration loop here.
 		while (iterator.hasNext()) {
 			iterator.next().uploadDone(this);
 		}
 	}
 
 	/**
-	 * Notify about certain action related directly to the {@link UploadProgressInfo}.
+	 * Notify about certain action related directly to the {@link UploadProgress}.
 	 * <br/>
-	 * In the {@link Receiver#receiveUpload(String, String)} returns null, then the {@link UploadProgressInfo} 
+	 * In the {@link Receiver#receiveUpload(String, String)} returns null, then the {@link UploadProgress} 
 	 * will buffer and provide the file content through 
 	 */
-	public interface UploadProgressInfoListener {
+	public interface UploadProgressListener extends Serializable {
 		// TODO: Should have my own method for what Receiver does, but we'll see...
 		// OR: Create a model for the file upload so that one can bind it easily with
 		// external sources... though what can be better then an OutputStream...?
 
 		/**
 		 * Inform the API user that the upload should be removed.
-		 * @param uploadProgressInfo	the {@link UploadProgressInfo} component.
+		 * @param uploadProgress	the {@link UploadProgress} component.
 		 */
-		void shouldRemoveUploadComponent(UploadProgressInfo uploadProgressInfo);
+		void shouldRemoveUploadProgress(UploadProgress uploadProgress);
 
 		/**
 		 * Called when the upload starts. 
-		 * @param uploadProgressInfo	the {@link UploadProgressInfo} component.
+		 * @param uploadProgress	the {@link UploadProgress} component.
 		 */
-		void uploadStarted(UploadProgressInfo uploadProgressInfo);
+		void uploadStarted(UploadProgress uploadProgress);
 
 		/**
 		 * Called when the upload failed. 
-		 * @param uploadProgressInfo	the {@link UploadProgressInfo} component.
+		 * @param uploadProgress	the {@link UploadProgress} component.
 		 */
-		void uploadFailed(UploadProgressInfo uploadProgressInfo);
+		void uploadFailed(UploadProgress uploadProgress);
 
 		/**
 		 * Called when the upload is cancel by the user. 
-		 * @param uploadProgressInfo	the {@link UploadProgressInfo} component.
+		 * @param uploadProgress	the {@link UploadProgress} component.
 		 */
-		void uploadCanceled(UploadProgressInfo uploadProgressInfo);
+		void uploadCanceled(UploadProgress uploadProgress);
 
 		/**
 		 * Called when the upload is being successful, hopefully. 
-		 * @param uploadProgressInfo	the {@link UploadProgressInfo} component.
+		 * @param uploadProgress	the {@link UploadProgress} component.
 		 */
-		void uploadDone(UploadProgressInfo uploadProgressInfo);
+		void uploadDone(UploadProgress uploadProgress);
 
 	}
 
