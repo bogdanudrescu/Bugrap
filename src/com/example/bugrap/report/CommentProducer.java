@@ -1,14 +1,15 @@
 package com.example.bugrap.report;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.vaadin.addons.upload.HorizontalUploadGroup;
+import org.vaadin.addons.upload.UploadProducer.UploadProducerAdapter;
+import org.vaadin.addons.upload.UploadProgress;
 
-import com.example.utils.upload.HorizontalUploadGroup;
-import com.example.utils.upload.UploadProducer.UploadProducerAdapter;
-import com.example.utils.upload.UploadProgress;
 import com.vaadin.data.util.ObjectProperty;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
@@ -87,6 +88,14 @@ public class CommentProducer extends Panel {
 		public void uploadDone(UploadProgress uploadProgress) {
 			currentUploads.add(uploadProgress);
 		}
+
+		/* (non-Javadoc)
+		 * @see org.vaadin.addons.upload.UploadProducer.UploadProducerAdapter#shouldRemoveUploadProgress(org.vaadin.addons.upload.UploadProgress)
+		 */
+		@Override
+		public void shouldRemoveUploadProgress(UploadProgress uploadProgress) {
+			currentUploads.remove(uploadProgress);
+		}
 	}
 
 	/*
@@ -101,18 +110,27 @@ public class CommentProducer extends Panel {
 		public void buttonClick(ClickEvent event) {
 			if (delegate != null) {
 				if (!StringUtils.isEmpty(comment.getValue())) {
-					delegate.commentAdded(comment.getValue());
+
+					// Store the comment.
+					if (delegate.commentAdded(comment.getValue())) {
+						comment.setValue("");
+					}
 				}
 
+				List<UploadProgress> uploadsToRemove = new ArrayList<>(uploadListener.currentUploads.size());
 				Iterator<UploadProgress> iterator = uploadListener.currentUploads.iterator();
 				while (iterator.hasNext()) {
 					UploadProgress upload = (UploadProgress) iterator.next();
-					delegate.attachmentAdded(upload.getUploadFileName(), upload.getUploadBytes());
+
+					// Store the attachment.
+					if (delegate.attachmentAdded(upload.getUploadFileName(), upload.getUploadBytes())) {
+						uploadsToRemove.add(upload);
+					}
 				}
+				uploadGroup.getProducer().removeUploads(uploadsToRemove);
 
 			}
 		}
-
 	}
 
 	/*

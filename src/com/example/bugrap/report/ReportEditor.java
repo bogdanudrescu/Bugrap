@@ -66,7 +66,7 @@ public class ReportEditor extends Panel {
 	/*
 	 * The comments view.
 	 */
-	private CommentsView commentsView;
+	private CommentListView commentListView;
 
 	/**
 	 * Create a new report editor.
@@ -84,13 +84,11 @@ public class ReportEditor extends Panel {
 		layout.addComponent(createTitleArea());
 		layout.addComponent(createPropertiesArea());
 
-		Component descriptionArea = createCommentsArea();
-		layout.addComponent(descriptionArea);
-		layout.setExpandRatio(descriptionArea, 0.5f); // FIXME This doesn't work when resize.
+		layout.addComponent(createCommentListArea());
+		//		layout.setExpandRatio(commentListArea, 1); // FIXME This doesn't work when resize.
 
-		Component commentArea = createNewCommentArea();
-		layout.addComponent(commentArea);
-		layout.setExpandRatio(commentArea, 0.5f);
+		layout.addComponent(createCommentArea());
+		//		layout.setExpandRatio(commentArea, 1);
 
 		setContent(layout);
 	}
@@ -185,25 +183,25 @@ public class ReportEditor extends Panel {
 	}
 
 	/*
+	 * Create the description area.
+	 */
+	private Component createCommentListArea() {
+		commentListView = new CommentListView();
+		commentListView.setSizeFull();
+
+		return commentListView;
+	}
+
+	/*
 	 * Create the comment area.
 	 */
-	private Component createNewCommentArea() {
+	private Component createCommentArea() {
 
 		CommentProducer commentProducer = new CommentProducer();
 		commentProducer.setSizeFull();
 		commentProducer.setDelegate(new CommentProducerDelegateImpl());
 
 		return commentProducer;
-	}
-
-	/*
-	 * Create the description area.
-	 */
-	private Component createCommentsArea() {
-		commentsView = new CommentsView();
-		commentsView.setSizeFull();
-
-		return commentsView;
 	}
 
 	/*
@@ -216,7 +214,7 @@ public class ReportEditor extends Panel {
 		 */
 		@Override
 		public boolean commentAdded(String comment) {
-			commentsView.addComment(comment);
+			commentListView.addComment(comment);
 			return true;
 		}
 
@@ -225,7 +223,7 @@ public class ReportEditor extends Panel {
 		 */
 		@Override
 		public boolean attachmentAdded(String attachmentName, byte[] attachment) {
-			commentsView.addAttachment(attachmentName, attachment);
+			commentListView.addAttachment(attachmentName, attachment);
 			return true;
 		}
 
@@ -249,7 +247,7 @@ public class ReportEditor extends Panel {
 		//this.report = report;
 		binder.setItemDataSource(new BeanItem<Report>(report));
 
-		commentsView.setReport(report);
+		commentListView.setReport(report);
 	}
 
 	/*

@@ -6,6 +6,9 @@
         <dependent-module archiveName="bugrap-domain.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/bugrap-domain/bugrap-domain">
             <dependency-type>uses</dependency-type>
         </dependent-module>
+        <dependent-module archiveName="uploadprogress.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/UploadProgress/UploadProgress">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="context-root" value="Bugrap_"/>
         <property name="java-output-path" value="/Bugrap_/build/classes"/>
     </wb-module>

@@ -23,7 +23,7 @@ import com.vaadin.ui.TextArea;
  * @author bogdanudrescu
  */
 @SuppressWarnings("serial")
-public class CommentsView extends Panel {
+public class CommentListView extends Panel {
 
 	/*
 	 * The components layout.
@@ -33,9 +33,13 @@ public class CommentsView extends Panel {
 	/**
 	 * Creates the comments view.
 	 */
-	public CommentsView() {
-		layout = new GridLayout(2, 1);
+	public CommentListView() {
+		layout = new GridLayout(2, 2);
 		layout.setSizeFull();
+
+		layout.setColumnExpandRatio(1, 1);
+
+		setContent(layout);
 	}
 
 	/*
@@ -71,6 +75,10 @@ public class CommentsView extends Panel {
 	 * Add comment on the layout.
 	 */
 	private void layoutComment(Comment comment) {
+
+		// Ensure the grid layout has enough rows for the comment.
+		layout.setRows(currentRow + 2);
+
 		Image image = new Image(null, BugrapResources.getInstance().getResource("girl.png"));
 		layout.addComponent(image, 0, currentRow);
 
@@ -80,6 +88,7 @@ public class CommentsView extends Panel {
 		currentRow++;
 
 		TextArea commentArea = new TextArea(null, comment.getComment());
+		commentArea.setSizeFull();
 		layout.addComponent(commentArea, 1, currentRow);
 
 		currentRow++;
@@ -91,6 +100,8 @@ public class CommentsView extends Panel {
 	 * @param attachment		the attachment data.
 	 */
 	public synchronized void addAttachment(String attachmentName, byte[] attachment) {
+		System.out.println("addAttachment: " + attachmentName);
+
 		Comment comment = new Comment();
 		comment.setAttachmentName(attachmentName);
 		comment.setAttachment(attachment);
@@ -104,6 +115,8 @@ public class CommentsView extends Panel {
 	 * @param commentText	the new comment to add.
 	 */
 	public synchronized void addComment(String commentText) {
+		System.out.println("addComment: " + commentText);
+
 		Comment comment = new Comment();
 		comment.setComment(commentText);
 		comment.setType(Type.COMMENT);

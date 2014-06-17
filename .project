@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>bugrap-domain</project>
+		<project>UploadProgress</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
