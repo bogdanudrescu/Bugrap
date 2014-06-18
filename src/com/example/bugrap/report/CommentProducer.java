@@ -1,5 +1,6 @@
 package com.example.bugrap.report;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -144,8 +145,12 @@ public class CommentProducer extends Panel {
 		@Override
 		public void buttonClick(ClickEvent event) {
 
+			System.out.println("CancelButtonListener.buttonClick");
+
 			// TODO: ask first, don't just clear the man's work.
 			comment.setValue("");
+
+			uploadGroup.getProducer().removeUploads(new ArrayList<>(uploadListener.currentUploads));
 		}
 
 	}
@@ -166,7 +171,7 @@ public class CommentProducer extends Panel {
 	/**
 	 * Delegate of the comment producer.
 	 */
-	public static interface CommentProducerDelegate {
+	public interface CommentProducerDelegate extends Serializable {
 
 		/**
 		 * Called when a new comment should be added.

@@ -1,9 +1,17 @@
-@import "bugrap.scss";
+/* Import the reindeer theme.*/
+/* This only allows us to use the mixins defined in it and does not add any styles by itself. */
+@import "../reindeer/reindeer.scss";
+
 @import "addons.scss";
+@import "bugrap.scss";
 
 /* This file prefixes all rules with the theme name to avoid causing conflicts with other themes. */
 /* The actual styles should be defined in bugrap.scss */
 .bugrap {
-  @include bugrap;
+
+  /* Include all the styles from the reindeer theme */
+  @include reindeer;
+
   @include addons;
+  @include bugrap;
 }

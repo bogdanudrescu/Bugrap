@@ -1,5 +1,7 @@
 package com.example.bugrap.report;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -11,9 +13,13 @@ import com.example.bugrap.data.DataManager;
 import com.example.bugrap.data.LoginManager;
 import com.example.bugrap.resources.BugrapResources;
 import com.example.utils.Utils;
+import com.vaadin.server.StreamResource;
+import com.vaadin.server.StreamResource.StreamSource;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.Image;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Link;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TextArea;
 
@@ -74,7 +80,7 @@ public class CommentListView extends Panel {
 	/*
 	 * Add comment on the layout.
 	 */
-	private void layoutComment(Comment comment) {
+	private void layoutComment(final Comment comment) {
 
 		// Ensure the grid layout has enough rows for the comment.
 		layout.setRows(currentRow + 2);
@@ -87,9 +93,31 @@ public class CommentListView extends Panel {
 
 		currentRow++;
 
-		TextArea commentArea = new TextArea(null, comment.getComment());
-		commentArea.setSizeFull();
-		layout.addComponent(commentArea, 1, currentRow);
+		Component component;
+		if (comment.getType() == Type.COMMENT) {
+			TextArea commentArea = new TextArea(null, comment.getComment());
+			commentArea.setReadOnly(true);
+			commentArea.setSizeFull();
+
+			component = commentArea;
+
+		} else {
+
+			StreamResource attachmentResource = new StreamResource(new StreamSource() {
+				@Override
+				public InputStream getStream() {
+					return new ByteArrayInputStream(comment.getAttachment());
+				}
+			}, comment.getAttachmentName());
+
+			Link link = new Link(comment.getAttachmentName(), attachmentResource);
+			link.setTargetName("_blank");
+			link.setSizeFull();
+
+			component = link;
+		}
+
+		layout.addComponent(component, 1, currentRow);
 
 		currentRow++;
 	}
@@ -105,7 +133,7 @@ public class CommentListView extends Panel {
 		Comment comment = new Comment();
 		comment.setAttachmentName(attachmentName);
 		comment.setAttachment(attachment);
-		comment.setType(Type.COMMENT);
+		comment.setType(Type.ATTACHMENT);
 
 		setDefaultsAndStore(comment);
 	}
