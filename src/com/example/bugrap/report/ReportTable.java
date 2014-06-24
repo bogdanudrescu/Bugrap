@@ -5,6 +5,8 @@ import java.util.Set;
 
 import org.vaadin.bugrap.domain.BugrapRepository.ReportsQuery;
 import org.vaadin.bugrap.domain.entities.Report;
+import org.vaadin.bugrap.domain.entities.Report.Priority;
+import org.vaadin.teemu.ratingstars.RatingStars;
 
 import com.example.bugrap.data.DataManager;
 import com.example.utils.Utils;
@@ -50,6 +52,10 @@ public class ReportTable extends Table {
 		DateIntervalCell dateIntervalCell = new DateIntervalCell();
 		addGeneratedColumn("timestamp", dateIntervalCell);
 		addGeneratedColumn("reportedTimestamp", dateIntervalCell);
+
+		// Priority renderer.
+		PriorityCell priorityCell = new PriorityCell();
+		addGeneratedColumn("priority", priorityCell);
 	}
 
 	/*
@@ -84,6 +90,60 @@ public class ReportTable extends Table {
 			}
 
 			return null;
+		}
+
+	}
+
+	/*
+	 * Priority cell view.
+	 */
+	@SuppressWarnings("unchecked")
+	private static class PriorityCell implements ColumnGenerator {
+
+		@Override
+		public Object generateCell(Table source, Object itemId, Object columnId) {
+
+			Property<Priority> property = source.getContainerProperty(itemId, columnId);
+
+			if (property != null && property.getType().equals(Priority.class)) {
+				RatingStars ratingStars = new RatingStars();
+				ratingStars.setMaxValue(MAX_RATING);
+				ratingStars.setValue(ratingForPriority(property.getValue()) + Math.random());
+				ratingStars.setReadOnly(true);
+
+				return ratingStars;
+			}
+
+			return null;
+		}
+
+		private static int MAX_RATING = 6;
+
+		/*
+		 * Gets the rating value for the specified priority.
+		 */
+		private static double ratingForPriority(Priority priority) {
+			switch (priority) {
+				case TRIVIAL:
+					return 1;
+
+				case MINOR:
+					return 2;
+
+				case NORMAL:
+					return 3;
+
+				case MAJOR:
+					return 4;
+
+				case CRITICAL:
+					return 5;
+
+				case BLOCKER:
+					return 6;
+			}
+
+			return 0;
 		}
 
 	}

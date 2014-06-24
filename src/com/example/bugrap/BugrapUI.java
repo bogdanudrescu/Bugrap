@@ -9,6 +9,7 @@ import com.example.bugrap.data.DataManager;
 import com.vaadin.annotations.Push;
 import com.vaadin.annotations.Theme;
 import com.vaadin.annotations.VaadinServletConfiguration;
+import com.vaadin.annotations.Widgetset;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.ViewChangeListener;
 import com.vaadin.server.VaadinRequest;
@@ -22,6 +23,7 @@ import com.vaadin.ui.UI;
 @SuppressWarnings("serial")
 @Theme("bugrap")
 @Push(PushMode.MANUAL)
+@Widgetset("com.example.bugrap.widgetset.BugrapWidgetset")
 public class BugrapUI extends UI {
 
 	@WebServlet(value = "/*", asyncSupported = true)

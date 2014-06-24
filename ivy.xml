@@ -47,5 +47,8 @@
 		<!-- PopupButton -->
 		<dependency org="org.vaadin.addons" name="popupbutton" rev="2.3.0" />
 
+		<!-- RatingStars -->
+		<dependency org="org.vaadin.addons" name="ratingstars" rev="2.1" />
+
 	</dependencies>
 </ivy-module>

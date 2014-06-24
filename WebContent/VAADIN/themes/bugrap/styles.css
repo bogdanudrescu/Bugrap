@@ -3817,12 +3817,12 @@ body .bugrap.v-app .v-app-loading {
 	outline: none;
 }
 
-.bugrap .v-button:active, .bugrap .v-button.v-pressed, .bugrap .v-button.v-button-toggled {
+.bugrap .v-button:active, .bugrap .v-button.v-pressed, .bugrap .v-button.v-toggled {
 	background-image: url(../reindeer/button/img/left-pressed.png);/** sprite-ref: buttons */
 	outline: none;
 }
 
-.bugrap .v-button:active .v-button-wrap, .bugrap .v-button.v-pressed .v-button-wrap, .bugrap .v-button.v-button-toggled .v-button-wrap {
+.bugrap .v-button:active .v-button-wrap, .bugrap .v-button.v-pressed .v-button-wrap, .bugrap .v-button.v-toggled .v-button-wrap {
 	background-image: url(../reindeer/button/img/right-pressed.png);/** sprite-ref: buttons; sprite-alignment: right */
 	outline: none;
 }
@@ -3863,11 +3863,11 @@ body .bugrap.v-app .v-app-loading {
 	background-image: url(../reindeer/button/img/black/right-focus.png);/** sprite-ref: black-buttons; sprite-alignment: right */
 }
 
-.bugrap .black .v-button:active, .bugrap .black .v-button.v-pressed, .bugrap .black .v-button.v-button-toggled {
+.bugrap .black .v-button:active, .bugrap .black .v-button.v-pressed, .bugrap .black .v-button.v-toggled {
 	background-image: url(../reindeer/button/img/black/left-pressed.png);/** sprite-ref: black-buttons */
 }
 
-.bugrap .black .v-button:active .v-button-wrap, .bugrap .black .v-button.v-pressed .v-button-wrap, .bugrap .black .v-button.v-button-toggled .v-button-wrap {
+.bugrap .black .v-button:active .v-button-wrap, .bugrap .black .v-button.v-pressed .v-button-wrap, .bugrap .black .v-button.v-toggled .v-button-wrap {
 	background-image: url(../reindeer/button/img/black/right-pressed.png);/** sprite-ref: black-buttons; sprite-alignment: right */
 }
 
