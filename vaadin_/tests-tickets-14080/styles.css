@@ -1,0 +1,12 @@
+@import url(../reindeer/legacy-styles.css);
+
+.v-textarea {
+	/**/
+	resize: both;
+	background: red;
+	/**/
+	
+	/**
+	background: blue;
+	/**/
+}

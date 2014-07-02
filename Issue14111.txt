@@ -1,0 +1,150 @@
+ServerRpcHandler
+line 81
+
+            String csrfToken = null;
+
+            try {
+
+                csrfToken = json.getString(ApplicationConstants.CSRF_TOKEN);
+
+            } catch (JSONException e) {
+
+            }
+
+            this.csrfToken = csrfToken;
+
+
+
+AtmospherePushConnection
+line 174
+
+       if (connection.getCsrfToken() != ApplicationConnection.CSRF_DISABLED_VALUE) {
+            extraParams += "&" + ApplicationConstants.CSRF_TOKEN_PARAMETER
+                    + "=" + connection.getCsrfToken();
+        }
+
+ApplicationConnection
+line 170
+
+    /**
+     * Default value used by csrfToken when disable-xsrf-protection is true.
+     */
+    // Keep this as a constant so that when verifying the csrfToken against it
+    // will base on reference. (lol) to bad it doesn't work in JS.
+    //
+    // TODO: Shall we keep "init"? Is there any side effect if we set this to
+    // null?
+    public static final String CSRF_DISABLED_VALUE = "init";
+
+    // will hold the CSRF token once received
+    private String csrfToken = CSRF_DISABLED_VALUE;// "init";
+
+line 833 (843)
+
+        if (getCsrfToken() != CSRF_DISABLED_VALUE) {
+
+            // Do not add csrfToken is the xsrf-protection is disabled
+
+            // (disable-xsrf-protection = true)
+
+            payload.put(ApplicationConstants.CSRF_TOKEN, new JSONString(
+
+                    getCsrfToken()));
+
+        }
+
+
+uitest/src/com/vaadin/tests/applicationservlet/XSRFDisabledServlet.java
+
+public class XSRFDisabledServlet extends VaadinServlet {
+
+
+
+    public XSRFDisabledServlet() {
+
+        String disableXSRFSystemPropertyName = getClass().getPackage().getName()
+
+                + ".disable-xsrf-protection";
+
+
+
+        System.setProperty(disableXSRFSystemPropertyName, "true");
+
+    }
+
+}
+
+
+web.xml
+
+
+
+    <!-- In Vaadin 7.2.x, csrfToken not disabled with disable-xsrf-protection set to true #14111
+
+        Testing this in the TextArea resize issue test UI #14080 -->
+
+    <servlet>
+
+        <servlet-name>TextAreaResize#14080#1</servlet-name>
+
+        <servlet-class>com.vaadin.server.VaadinServlet</servlet-class>
+
+        <init-param>
+
+            <param-name>UI</param-name>
+
+            <param-value>com.vaadin.tests.components.textarea.TextAreaSizeResetted</param-value>
+
+        </init-param>
+
+        <init-param>
+
+            <param-name>disable-xsrf-protection</param-name>
+
+            <param-value>true</param-value>
+
+        </init-param>
+
+    </servlet>
+
+
+
+    <servlet-mapping>
+
+        <servlet-name>TextAreaResize#14080#1</servlet-name>
+
+        <url-pattern>/TextAreaSizeResetted1/*</url-pattern>
+
+    </servlet-mapping>
+
+
+
+    <servlet>
+
+        <servlet-name>TextAreaResize#14080#2</servlet-name>
+
+        <servlet-class>com.vaadin.tests.applicationservlet.XSRFDisabledServlet</servlet-class>
+
+        <init-param>
+
+            <param-name>UI</param-name>
+
+            <param-value>com.vaadin.tests.components.textarea.TextAreaSizeResetted</param-value>
+
+        </init-param>
+
+    </servlet>
+
+
+
+    <servlet-mapping>
+
+        <servlet-name>TextAreaResize#14080#2</servlet-name>
+
+        <url-pattern>/TextAreaSizeResetted2/*</url-pattern>
+
+    </servlet-mapping>
+
+
+
+
